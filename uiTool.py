@@ -4,6 +4,7 @@ from crawling import getData
 
 # data
 root = Tk()
+
 runTool = True
 input1Data = DoubleVar(root)
 input2Data = DoubleVar(root)
@@ -25,8 +26,8 @@ def reCheck30s():
     checkData2['text'] = round(float(profitability) * 100000000) + float(input2Data.get())
     root.update()
     root.update_idletasks()
-    if isinstance(float(input1Data.get()), float) and isinstance(float(input2Data.get()), float) and  isinstance(float(input3Data.get()), float): 
-        if float(input3Data.get()) > round(float(profitability) * 100000000) + float(input1Data.get()) or float(input3Data.get()) > round(float(profitability) * 100000000) + float(input2Data.get()):
+    if isinstance(float(input1Data.get()), float) and isinstance(float(input2Data.get()), float) and  isinstance(float(input3Data.get()), float) and  float(input3Data.get()) > 0.0:
+        if (round(float(profitability) * 100000000) + float(input1Data.get()) > float(input3Data.get())) or (round(float(profitability) * 100000000) + float(input2Data.get()) > float(input3Data.get())):
             playsound('notification.mp3')
 
 
@@ -58,24 +59,25 @@ def periodically_called():
 # set windown width
 root.geometry('600x400')
 root.title('DogeCoin')
+root.config(background='gray20')
 
 # table 1
 
 # Label
-label_profitability = Label(root, text='Profitability')
-label_difficulty = Label(root, text='Mining Diff')
-label_current_difficulty = Label(root, text='Dogechain Diff')
-label_auto_response = Label(root, text='Response')
+label_profitability = Label(root, text='Profitability', fg='white', background='gray20')
+label_difficulty = Label(root, text='Mining Diff', fg='white', background='gray20')
+label_current_difficulty = Label(root, text='Dogechain Diff', fg='white', background='gray20')
+label_auto_response = Label(root, text='Response', fg='white', background='gray20')
 # Grid
 label_profitability.grid(row = 0, column= 0,padx=10, pady=5)
 label_difficulty.grid(row = 0, column= 1,padx=10, pady=5)
 label_current_difficulty.grid(row = 0, column= 2,padx=10, pady=5)
 label_auto_response.grid(row = 0, column= 3,padx=10, pady=5)
 # data
-label_profitability_data = Label(root, text='checking')
-label_difficulty_data = Label(root, text='checking')
-label_current_difficulty_data = Label(root, text='checking')
-label_auto_response_data = Label(root, text='checking')
+label_profitability_data = Label(root, text='checking', fg='white', background='gray20')
+label_difficulty_data = Label(root, text='checking', fg='white', background='gray20')
+label_current_difficulty_data = Label(root, text='checking', fg='white', background='gray20')
+label_auto_response_data = Label(root, text='checking', fg='white', background='gray20')
 
 label_profitability_data.grid(row = 1, column= 0,padx=10, pady=5)
 label_difficulty_data.grid(row = 1, column= 1,padx=10, pady=5)
@@ -84,42 +86,42 @@ label_auto_response_data.grid(row = 1, column= 3,padx=10, pady=5)
 
 # spacing
 # none label
-Label(root, text='').grid(row = 2, column= 0,padx=15, pady=15)
+Label(root, text='', fg='white', background='gray20').grid(row = 2, column= 0,padx=15, pady=15)
 
 # table 2 : input and check
 # input
-input1_label = Label(root, text='Giá doge')
-input2_label = Label(root, text='Giá SuperDoge')
-input3_label = Label(root, text='Giá vào lệnh')
+input1_label = Label(root, text='Giá doge', fg='white', background='gray20')
+input2_label = Label(root, text='Giá SuperDoge', fg='white', background='gray20')
+input3_label = Label(root, text='Giá vào lệnh', fg='white', background='gray20')
 checkedata = Label(root, text='')
 input1_label.grid(row = 3, column= 0,padx=10, pady=5)
 input2_label.grid(row = 3, column= 1,padx=10, pady=5)
 input3_label.grid(row = 3, column= 2,padx=10, pady=5)
 # checkedata.grid(row = 5, column= 3,padx=10, pady=5)
-input1_entry = Entry(root, width = 10, textvariable=input1Data)
-input2_entry = Entry(root, width = 10, textvariable=input2Data)
-input3_entry = Entry(root, width = 10, textvariable=input3Data)
+input1_entry = Entry(root, width = 10, textvariable=input1Data, fg='white', background='gray20')
+input2_entry = Entry(root, width = 10, textvariable=input2Data, fg='white', background='gray20')
+input3_entry = Entry(root, width = 10, textvariable=input3Data, fg='white', background='gray20')
 input1_entry.grid(row = 4, column= 0,padx=10, pady=5)
 input2_entry.grid(row = 4, column= 1,padx=10, pady=5)
 input3_entry.grid(row = 4, column= 2,padx=10, pady=5)
 # Label
-checkData1 = Label(root, text='checking')
-checkData2 = Label(root, text='checking')
+checkData1 = Label(root, text='checking', fg='white', background='gray20')
+checkData2 = Label(root, text='checking', fg='white', background='gray20')
 checkData1.grid(row = 5, column= 0,padx=10, pady=5)
 checkData2.grid(row = 5, column= 1,padx=10, pady=5)
 
 # spacing
 # none label
-Label(root, text='').grid(row = 6, column= 0,padx=15, pady=15)
+Label(root, text='', fg='white', background='gray20').grid(row = 6, column= 0,padx=15, pady=15)
 
 
 # table 3
 # Label
-label_block = Label(root, text='Block')
-label_time = Label(root, text='Time')
-label_transaction = Label(root, text='Transactions')
-label_reward = Label(root, text='Reward')
-label_size = Label(root, text='Size')
+label_block = Label(root, text='Block', fg='white', background='gray20')
+label_time = Label(root, text='Time', fg='white', background='gray20')
+label_transaction = Label(root, text='Transactions', fg='white', background='gray20')
+label_reward = Label(root, text='Reward', fg='white', background='gray20')
+label_size = Label(root, text='Size', fg='white', background='gray20')
 # Grid
 label_block.grid(row = 7, column= 0,padx=10, pady=5)
 label_time.grid(row = 7, column= 1,padx=10, pady=5)
@@ -128,11 +130,11 @@ label_reward.grid(row = 7, column= 3,padx=10, pady=5)
 label_size.grid(row = 7, column= 4,padx=10, pady=5)
 
 # data
-label_block_data = Label(root, text='checking')
-label_time_data = Label(root, text='checking')
-label_transaction_data = Label(root, text='checking')
-label_reward_data = Label(root, text='checking')
-label_size_data = Label(root, text='checking')
+label_block_data = Label(root, text='checking', fg='white', background='gray20')
+label_time_data = Label(root, text='checking', fg='white', background='gray20')
+label_transaction_data = Label(root, text='checking', fg='white', background='gray20')
+label_reward_data = Label(root, text='checking', fg='white', background='gray20')
+label_size_data = Label(root, text='checking', fg='white', background='gray20')
 # Grid
 label_block_data.grid(row = 8, column= 0,padx=10, pady=5)
 label_time_data.grid(row = 8, column= 1,padx=10, pady=5)

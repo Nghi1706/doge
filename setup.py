@@ -9,7 +9,7 @@ from setuptools import setup
 
 APP = ['uiTool.py']
 DATA_FILES = []
-OPTIONS = {}
+OPTIONS = {'packages' : ['requests', 'bs4', 'datetime', 'tkinter', 'playsound', 'AppKit']}
 
 setup(
     app=APP,
