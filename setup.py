@@ -5,13 +5,14 @@ Usage:
     python setup.py py2app
 """
 
-from setuptools import setup
+import setuptools  
 
 APP = ['uiTool.py']
 DATA_FILES = []
-OPTIONS = {'packages' : ['requests', 'bs4', 'datetime', 'tkinter', 'playsound', 'AppKit']}
+OPTIONS = {'argv_emulation': True, 'packages' : ['requests', 'bs4', 'datetime', 'tkinter', 'playsound', 'AppKit']}
 
-setup(
+setuptools.setup(
+    name='doge',
     app=APP,
     data_files=DATA_FILES,
     options={'py2app': OPTIONS},

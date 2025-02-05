@@ -11,7 +11,7 @@ def getData():
     reschain = requests.get('https://dogechain.info/')
     html_content = reschain.text
     soup = BeautifulSoup(html_content, "html.parser")
-    profitability = resMini.json()['getdashboarddata']['data']['pool']['price']
+    profitability = int(round(float(resMini.json()['getdashboarddata']['data']['pool']['price']) * 100000000))
     difficulty = int(resMini.json()['getdashboarddata']['data']['network']['difficulty'][0:4])
     current_difficulty = int(soup.find('h3',{'id':'block_difficulty'}).get_text().replace(',','')[0:4])
     responseScreen = 'Sai khối'
@@ -25,7 +25,6 @@ def getData():
     blockReward = blockinfor[3].get_text()
     blockSize = blockinfor[4].get_text()
     dataBlock = [blockNumber, blockTime, blockTransactions,blockReward,blockSize]
-
     return [profitability,difficulty,current_difficulty,responseScreen, dataBlock]
 
 getData()

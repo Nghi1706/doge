@@ -2,18 +2,18 @@ from tkinter import *
 from playsound import playsound
 from crawling import getData
 
+
+
 # data
 root = Tk()
-
-runTool = True
 input1Data = DoubleVar(root)
 input2Data = DoubleVar(root)
 input3Data = DoubleVar(root)
+profitability_bf = int()
 
 def reCheck30s():
     profitability,difficulty,current_difficulty,responseScreen, dataBlock = getData()
-    profitability = profitability
-    label_profitability_data['text'] = round(float(profitability) * 100000000)
+    label_profitability_data['text'] = str(profitability)
     label_difficulty_data['text'] = difficulty
     label_current_difficulty_data['text'] = current_difficulty
     label_auto_response_data['text'] = responseScreen
@@ -22,31 +22,22 @@ def reCheck30s():
     label_transaction_data['text'] = dataBlock[2]
     label_reward_data['text'] = dataBlock[3]
     label_size_data['text'] = dataBlock[4]
-    checkData1['text'] = round(float(profitability) * 100000000) + float(input1Data.get())
-    checkData2['text'] = round(float(profitability) * 100000000) + float(input2Data.get())
+    checkData1['text'] = profitability + float(input1Data.get())
+    checkData2['text'] = profitability+ float(input2Data.get())
     root.update()
     root.update_idletasks()
-    if isinstance(float(input1Data.get()), float) and isinstance(float(input2Data.get()), float) and  isinstance(float(input3Data.get()), float) and  float(input3Data.get()) > 0.0:
-        if (round(float(profitability) * 100000000) + float(input1Data.get()) > float(input3Data.get())) or (round(float(profitability) * 100000000) + float(input2Data.get()) > float(input3Data.get())):
-            playsound('notification.mp3')
+    if int(profitability_bf) != int(profitability):
+        # profit changed
+        if isinstance(float(input1Data.get()), float) and isinstance(float(input2Data.get()), float) and  isinstance(float(input3Data.get()), float) and  float(input3Data.get()) > 0.0:
+            if (profitability + float(input1Data.get()) > float(input3Data.get())) or (profitability + float(input2Data.get()) > float(input3Data.get())):
+                playsound('notification.mp3')
+    return profitability
 
-
-# def on_entry_change1(*args):
-#     new_value = input1Data.get()
-# def on_entry_change2(*args):
-#     new_value = input2Data.get()
-#     print(new_value)
-# def on_entry_change3(*args):
-#     new_value = input3Data.get()
-#     print("New value :", new_value)
-# # data
-# input3Data.trace("w", on_entry_change3)
-# input2Data.trace("w", on_entry_change2)
-# input1Data.trace("w", on_entry_change1)
-#this gets called every 30 s
 def periodically_called():
     try:
-        reCheck30s()
+        profitability_geted = reCheck30s()
+        global profitability_bf
+        profitability_bf  = profitability_geted
         pass
     except Exception as e:
         f = open('log.txt', 'a')
@@ -54,7 +45,7 @@ def periodically_called():
         f.close()
         pass
 
-    root.after(30000, periodically_called)
+    root.after(10000, periodically_called)
 
 # set windown width
 root.geometry('600x400')
@@ -142,5 +133,5 @@ label_transaction_data.grid(row = 8, column= 2,padx=10, pady=5)
 label_reward_data.grid(row = 8, column= 3,padx=10, pady=5)
 label_size_data.grid(row = 8, column= 4,padx=10, pady=5)
 
-root.after(30, periodically_called)
+root.after(10, periodically_called)
 root.mainloop()
