@@ -7,7 +7,7 @@ Usage:
 
 import setuptools  
 
-APP = ['uiTool.py']
+APP = ['doge.py']
 DATA_FILES = []
 OPTIONS = {'argv_emulation': True, 'packages' : ['requests', 'bs4', 'datetime', 'tkinter', 'playsound', 'AppKit']}
 

@@ -1,7 +1,7 @@
 from tkinter import *
 from playsound import playsound
 from crawling import getData
-
+import os,sys
 
 
 # data
@@ -10,6 +10,15 @@ input1Data = DoubleVar(root)
 input2Data = DoubleVar(root)
 input3Data = DoubleVar(root)
 profitability_bf = int()
+# path to build
+def get_resource_path(filename):
+    # if run with file .app get this path
+    if getattr(sys, 'frozen', False):
+        base_path = os.path.join(sys._MEIPASS, "Contents/Resources")
+    else:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, filename)
 
 def reCheck30s():
     profitability,difficulty,current_difficulty,responseScreen, dataBlock = getData()
@@ -30,7 +39,9 @@ def reCheck30s():
         # profit changed
         if isinstance(float(input1Data.get()), float) and isinstance(float(input2Data.get()), float) and  isinstance(float(input3Data.get()), float) and  float(input3Data.get()) > 0.0:
             if (profitability + float(input1Data.get()) > float(input3Data.get())) or (profitability + float(input2Data.get()) > float(input3Data.get())):
-                playsound('notification.mp3')
+                # playsound('notification.mp3')
+                audio_file = get_resource_path("notification.mp3")
+                playsound(audio_file)
     return profitability
 
 def periodically_called():
@@ -40,7 +51,7 @@ def periodically_called():
         profitability_bf  = profitability_geted
         pass
     except Exception as e:
-        f = open('log.txt', 'a')
+        f = open(get_resource_path('log.txt'), 'a')
         f.write("error: " + str(e) + "\n")
         f.close()
         pass
