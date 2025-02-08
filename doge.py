@@ -15,7 +15,8 @@ profitability_bf = int()
 # create Threading
 
 def threadingGetdata():
-    Thread(target=getData(), name='getData Screen')
+    threadingGetdata = Thread(target=getData(), name='getData Screen')
+    threadingGetdata.start()
 
 def getData():
     global profitability_bf
