@@ -1,7 +1,8 @@
 from tkinter import *
 from playsound import playsound
-from crawling import getData
+from crawling import crawling
 import os,sys
+from threading import Thread
 
 
 # data
@@ -10,6 +11,19 @@ input1Data = DoubleVar(root)
 input2Data = DoubleVar(root)
 input3Data = DoubleVar(root)
 profitability_bf = int()
+
+# create Threading
+
+def threadingGetdata():
+    Thread(target=getData(), name='getData Screen')
+
+def getData():
+    global profitability_bf
+    profitability,difficulty,current_difficulty,responseScreen, dataBlock = crawling()
+    updateUI(profitability,difficulty,current_difficulty,responseScreen, dataBlock, profitability_bf)
+    profitability_bf = profitability
+
+
 # path to build
 def get_resource_path(filename):
     # if run with file .app get this path
@@ -20,8 +34,16 @@ def get_resource_path(filename):
 
     return os.path.join(base_path, filename)
 
-def reCheck30s():
-    profitability,difficulty,current_difficulty,responseScreen, dataBlock = getData()
+def playSoundChecking(profitability_bf, profitability):
+    if int(profitability_bf) != int(profitability):
+        # profit changed
+        if isinstance(float(input1Data.get()), float) and isinstance(float(input2Data.get()), float) and  isinstance(float(input3Data.get()), float) and  float(input3Data.get()) > 0.0:
+            if (profitability + float(input1Data.get()) > float(input3Data.get())) or (profitability + float(input2Data.get()) > float(input3Data.get())):
+                # playsound('notification.mp3')
+                audio_file = get_resource_path("notification.mp3")
+                playsound(audio_file)
+
+def updateUI(profitability,difficulty,current_difficulty,responseScreen, dataBlock, profitability_bf):
     label_profitability_data['text'] = str(profitability)
     label_difficulty_data['text'] = difficulty
     label_current_difficulty_data['text'] = current_difficulty
@@ -35,20 +57,11 @@ def reCheck30s():
     checkData2['text'] = profitability+ float(input2Data.get())
     root.update()
     root.update_idletasks()
-    if int(profitability_bf) != int(profitability):
-        # profit changed
-        if isinstance(float(input1Data.get()), float) and isinstance(float(input2Data.get()), float) and  isinstance(float(input3Data.get()), float) and  float(input3Data.get()) > 0.0:
-            if (profitability + float(input1Data.get()) > float(input3Data.get())) or (profitability + float(input2Data.get()) > float(input3Data.get())):
-                # playsound('notification.mp3')
-                audio_file = get_resource_path("notification.mp3")
-                playsound(audio_file)
-    return profitability
+    playSoundChecking(profitability_bf, profitability)
 
 def periodically_called():
     try:
-        profitability_geted = reCheck30s()
-        global profitability_bf
-        profitability_bf  = profitability_geted
+        threadingGetdata()
         pass
     except Exception as e:
         f = open(get_resource_path('log.txt'), 'a')
@@ -58,6 +71,8 @@ def periodically_called():
 
     root.after(10000, periodically_called)
 
+
+# ui
 # set windown width
 root.geometry('600x400')
 root.title('DogeCoin')

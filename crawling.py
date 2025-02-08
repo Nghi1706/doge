@@ -3,7 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime,timezone
 
-def getData():
+def crawling():
     # code
     dt = datetime.now(timezone.utc).replace(tzinfo=None)
     timeStamp = int(datetime.timestamp(dt))
@@ -27,4 +27,3 @@ def getData():
     dataBlock = [blockNumber, blockTime, blockTransactions,blockReward,blockSize]
     return [profitability,difficulty,current_difficulty,responseScreen, dataBlock]
 
-getData()
