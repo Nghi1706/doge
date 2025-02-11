@@ -1,5 +1,18 @@
-error: expected floating-point number but got "12z"
-error: expected floating-point number but got "12z"
-error: expected floating-point number but got "12z"
-error: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))
-error: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+error: Pool not running
+error: Pool not running
+error: Pool not running
+error: Pool not running
+error: Pool not running
+error: Pool not running
+error: Pool not running
+error: Pool not running
+error: Pool not running
+error: Pool not running
+error: Pool not running
+error: Pool not running
+error: Pool not running
+error: Pool not running
+error: Pool not running
+error: Pool not running
+error: Pool not running
+error: Pool not running
