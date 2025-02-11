@@ -83,7 +83,6 @@ def crawlingSelenium(miningDiff, fee, isCalculating):
 # crawlingSelenium(1234, 5342, False)
 
 def crawlDogeMing():
-    print('doge Minining')
     dt = datetime.now(timezone.utc).replace(tzinfo=None)
     timeStamp = int(datetime.timestamp(dt))
     resMini = requests.get('https://www.mining-dutch.nl/pools/dogecoin.php?page=api&action=getdashboarddata&api_key=&id=&_=' + str(timeStamp))
@@ -93,7 +92,6 @@ def crawlDogeMing():
     return [profitability,difficulty_mining, response]
 
 def crawlDogeChain():
-    print('doge Chain')
     dt = datetime.now(timezone.utc).replace(tzinfo=None)
     reschain = requests.get('https://dogechain.info/')
     html_content = reschain.text
@@ -111,7 +109,6 @@ def crawlDogeChain():
 
 def crawWhattomine():
      # setup firefox site
-    print('What to mine')
     options = Options()
     options.add_argument('--private')
     options.add_argument('--headless')
@@ -125,7 +122,6 @@ def crawWhattomine():
     return rev_BTCperDay
 
 def crawUnisat():
-    print('Unitsat')
     options = Options()
     options.add_argument('--private')
     options.add_argument('--headless')
@@ -145,7 +141,6 @@ def crawUnisat():
     return [firstBlockName1, firstBlockName2, firstBlockName3, firstBlockTransaction, firstBlockTime]
 
 def crawWhattomineCal(miningDiff, fee):
-    print('crawWhattomineCallllllllllll')
     miningDiff = miningDiff * 10000000
     options = Options()
     options.add_argument('--private')

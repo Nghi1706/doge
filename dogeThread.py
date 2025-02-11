@@ -120,30 +120,31 @@ class DogecoinApp(tk.Tk):
             result = crawUnisat()
         else:
             result = crawWhattomine()
-        print(f"Process {os.getpid()} processing {crawf}")
         return result
+        
+    @staticmethod
+    def background_task(miningDiff, fee):
+        result = crawWhattomineCal(miningDiff, fee)
+        return result
+
     def buttonCalClicked(self):
         self.buttonCal['state'] = tk.DISABLED
-        result = crawWhattomineCal(self.miningDiff, self.inputFees.get())
+        self.pool.apply_async(self.background_task,args=(self.miningDiff, float(self.inputFees.get())), callback=self.process_result)
+
+        # button
+    def process_result(self, result):
         self.dataWhattomineCal = result
-        self.updateWhattomineCal()
         self.buttonCal['state'] = tk.NORMAL
+        self.updateWhattomineCal()
         self.update()
         self.update_idletasks()
-
-    def clickCalulate(self):
-        print(self.input_Fees.get())
-
     def processResult(self, results):
         self.dataResponse.update(dict(zip(self.functionCrawling, results)))
         print(self.dataResponse)
-        print(len(self.dataResponse))
         self.miningDiff = self.dataResponse['dogeming'][2]
         self.buttonCal['state'] = tk.NORMAL
         if self.dataResponse['dogechain'][0] == self.dataResponse['dogeming'][1]:
             self.dataResponse['dogeming'][2] = 'Sai Khối'
-        print('profitability_bf' + str(self.profitability_bf))
-        print('profitability' + str(self.dataResponse['dogeming'][0]))
         self.updateUIPprofitAndCostCoin()
         self.updateUIUnisat()
         self.updateBlockDogeInfo()
@@ -219,7 +220,6 @@ class DogecoinApp(tk.Tk):
                     playsound(self.audio_file)
 
     def on_closing_pool(self):
-        print("Closing Pool...")
         self.pool.close()
         self.pool.terminate()
         self.pool.join()
