@@ -67,10 +67,6 @@ def crawlingSelenium(miningDiff, fee, isCalculating):
         return [rev_BTCperDay, firstBlockName1, firstBlockName2, firstBlockName3, firstBlockTransaction, firstBlockTime]
     else:
         # calculating data
-        print('fees')
-        print(fee)
-        print('miningDiff')
-        print(miningDiff)
         driver.get("https://whattomine.com/coins/431-fb-sha-256?hr=1000.0&d=" + str(miningDiff) + '&fee=' + str(fee))
         element= driver.find_elements(By.CLASS_NAME, 'font-monospace')
         rev_BTCperDaywFee = element[8].text
@@ -81,7 +77,6 @@ def crawlingSelenium(miningDiff, fee, isCalculating):
 
 
 # crawlingSelenium(1234, 5342, False)
-
 def crawlDogeMing():
     dt = datetime.now(timezone.utc).replace(tzinfo=None)
     timeStamp = int(datetime.timestamp(dt))
@@ -90,7 +85,12 @@ def crawlDogeMing():
     difficulty_mining = int(resMini.json()['getdashboarddata']['data']['network']['difficulty'][0:4])
     response = ''
     return [profitability,difficulty_mining, response]
-
+def crawlFractalbitcoin():
+    dt = datetime.now(timezone.utc).replace(tzinfo=None)
+    timeStamp = int(datetime.timestamp(dt))
+    resMini = requests.get('https://www.mining-dutch.nl/pools/fractalbitcoin.php?page=api&action=getdashboarddata&api_key=&id=&_=' + str(timeStamp))
+    difficulty_frata = int(resMini.json()['getdashboarddata']['data']['network']['difficulty'][0:4])
+    return difficulty_frata
 def crawlDogeChain():
     dt = datetime.now(timezone.utc).replace(tzinfo=None)
     reschain = requests.get('https://dogechain.info/')
@@ -141,20 +141,25 @@ def crawUnisat():
     return [firstBlockName1, firstBlockName2, firstBlockName3, firstBlockTransaction, firstBlockTime]
 
 def crawWhattomineCal(miningDiff, fee):
-    miningDiff = miningDiff * 10000000
-    options = Options()
-    options.add_argument('--private')
-    options.add_argument('--headless')
-    driver = webdriver.Firefox(options=options)
-    driver.get("https://whattomine.com/coins/431-fb-sha-256?hr=1000.0&d=" + str(miningDiff) + '&fee=' + str(fee))
-    element= driver.find_elements(By.CLASS_NAME, 'font-monospace')
-    rev_BTCperDaywFee = element[8].text
-    element.clear()
-    driver.delete_all_cookies()
-    driver.close()
+    try:
+        miningDiff = float(miningDiff) * 10000000
+        options = Options()
+        options.add_argument('--private')
+        options.add_argument('--headless')
+        driver = webdriver.Firefox(options=options)
+        driver.get(f"https://whattomine.com/coins/431-fb-sha-256?hr=1000.0&d_enabled=true&d={str(float(miningDiff))}&fee={str(float(fee))}")
+        element= driver.find_elements(By.CLASS_NAME, 'font-monospace')
+        rev_BTCperDaywFee = element[8].text
+        element.clear()
+        driver.delete_all_cookies()
+        driver.close()
+    except Exception as e:
+        rev_BTCperDaywFee = 'Error Input'
     return rev_BTCperDaywFee
 
 # print(crawlDogeChain())
 # print(crawlDogeMing())
 # print(crawWhattomine())
 # print(crawUnisat())
+# crawWhattomineCal('5577', '10')
+# crawlFractalbitcoin()

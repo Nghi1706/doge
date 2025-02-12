@@ -3,7 +3,7 @@ import sys
 import tkinter as tk
 from tkinter import Label, Entry, Button
 from playsound import playsound
-from crawling import crawlDogeChain,crawlDogeMing, crawWhattomine, crawWhattomineCal, crawUnisat
+from crawling import crawlDogeChain,crawlDogeMing, crawWhattomine, crawWhattomineCal, crawUnisat, crawlFractalbitcoin
 import multiprocessing
 
 class DogecoinApp(tk.Tk):
@@ -12,7 +12,7 @@ class DogecoinApp(tk.Tk):
 
         # config main windown
         self.title("Dogecoin Mining Tracker")
-        self.geometry("610x400")
+        self.geometry("650x400")
         self.config(background="gray20")
 
         # Data Variables
@@ -21,11 +21,12 @@ class DogecoinApp(tk.Tk):
         self.inputDogeCurrent = tk.DoubleVar(self)
         self.inputFees = tk.DoubleVar(self)
         self.profitability_bf = 0
-        self.miningDiff = 0
-        self.pool = multiprocessing.Pool(processes=min(5, multiprocessing.cpu_count()))
-        self.dataResponse = {'dogechain': [], 'dogeming': [], 'whattomine' : []} 
+        self.fratabitcoin = 0
+        self.firstTimeLoad = True
+        self.pool = multiprocessing.Pool(processes=min(6, multiprocessing.cpu_count()))
+        self.dataResponse = {'dogechain': [], 'dogeming': [], 'whattomine' : [], 'fratabitcoin' : []} 
         self.dataWhattomineCal = 0
-        self.functionCrawling = ['dogechain', 'dogeming', 'whattomine', 'unisat']
+        self.functionCrawling = ['dogechain', 'dogeming', 'whattomine', 'unisat', 'fratabitcoin']
         self.audio_file = self.get_resource_path('notification.mp3')
         self.log_file = self.get_resource_path('log.txt')
 
@@ -46,7 +47,7 @@ class DogecoinApp(tk.Tk):
         self.checkDissableButton()
 
     def checkDissableButton(self):
-        if self.miningDiff == 0:
+        if self.fratabitcoin == 0:
             self.buttonCal['state'] = tk.DISABLED
         else:
             self.buttonCal['state'] = tk.NORMAL
@@ -63,17 +64,24 @@ class DogecoinApp(tk.Tk):
 
     def create_whattomine_section(self):
         """Creates UI elements for whattomine data."""
-        header = ['Rev.BTCperDay', 'Calculating', 'Fees']
+        header = ['Rev.BTCperDay', 'Calculating', 'Fees', 'Fractal Bitcoin', '']
         for i, h in enumerate(header):
             Label(self, text=h, fg="yellow", background="gray20").grid(row=2, column=i, padx=10, pady=5)
         self.rev_per_day_label = Label(self, text="checking", fg="yellow", background="gray20")
         self.rev_per_day_cal_label = Label(self, text="checking", fg="yellow", background="gray20")
         self.input_Fees = Entry(self, width=10, textvariable=self.inputFees, fg="yellow", background="gray20")
-        self.buttonCal = Button(self, text="Calculate", command=self.buttonCalClicked)
+        self.buttonCal = Button(self, text="Calculate", 
+                                   font=("Arial", 12, "bold"),  # Chữ đậm
+                                   bg="black",  # Màu nền xám đậm
+                                   fg="black",  # Màu chữ trắng
+                                   relief="flat",  # Xóa viền mặc định
+                                   padx=1, pady=1, command=self.buttonCalClicked)
+        self.fractalbitcoin_label =  Label(self, text="checking", fg="yellow", background="gray20")
         self.rev_per_day_label.grid(row=3, column=0, padx=10, pady=5)
         self.rev_per_day_cal_label.grid(row=3, column=1, padx=10, pady=5)
         self.input_Fees.grid(row=3, column=2, padx=10, pady=5)
-        self.buttonCal.grid(row=3, column=3, padx=10, pady=5)
+        self.fractalbitcoin_label.grid(row=3, column=3, padx=10, pady=5)
+        self.buttonCal.grid(row=3, column=4, padx=10, pady=5)
 
     def create_cost_doge_section(self):
         # input
@@ -118,40 +126,66 @@ class DogecoinApp(tk.Tk):
             result = crawlDogeMing()
         elif crawf == 'unisat':
             result = crawUnisat()
+        elif crawf == 'fratabitcoin':
+            result = crawlFractalbitcoin()
         else:
             result = crawWhattomine()
         return result
         
     @staticmethod
-    def background_task(miningDiff, fee):
-        result = crawWhattomineCal(miningDiff, fee)
+    def background_task(fractalBCoinDiff, fee):
+        result = crawWhattomineCal(fractalBCoinDiff, fee)
         return result
 
     def buttonCalClicked(self):
         self.buttonCal['state'] = tk.DISABLED
-        self.pool.apply_async(self.background_task,args=(self.miningDiff, float(self.inputFees.get())), callback=self.process_result)
+        try:
+            self.pool.apply_async(self.background_task,args=(self.fratabitcoin, float(self.inputFees.get())), callback=self.process_result)
+
+        except Exception as e:
+            f = open(self.log_file, 'a')
+            f.write("error: " + str(e) + "\n")
+            f.close()
+            pass
 
         # button
     def process_result(self, result):
         self.dataWhattomineCal = result
-        self.buttonCal['state'] = tk.NORMAL
-        self.updateWhattomineCal()
+        self.buttonCal['state'] = tk.DISABLED
+        self.updateWhattomineCal(result)
         self.update()
         self.update_idletasks()
+        self.buttonCal['state'] = tk.NORMAL
+
     def processResult(self, results):
         self.dataResponse.update(dict(zip(self.functionCrawling, results)))
+        self.fratabitcoin = self.dataResponse['fratabitcoin']
         print(self.dataResponse)
-        self.miningDiff = self.dataResponse['dogeming'][2]
-        self.buttonCal['state'] = tk.NORMAL
         if self.dataResponse['dogechain'][0] == self.dataResponse['dogeming'][1]:
             self.dataResponse['dogeming'][2] = 'Sai Khối'
-        self.updateUIPprofitAndCostCoin()
-        self.updateUIUnisat()
-        self.updateBlockDogeInfo()
-        self.updateWhattomine()
+        try: 
+            self.updateUIPprofitAndCostCoin()
+            self.updateUIUnisat()
+            self.updateBlockDogeInfo()
+            self.updateWhattomine()
+            self.updateFraltalBitcoin()
+        except Exception as e:
+            f = open(self.log_file, 'a')
+            f.write("error: " + str(e) + "\n")
+            f.close()
+            pass
+        if self.firstTimeLoad :
+            self.buttonCal['state'] = tk.NORMAL
+            self.firstTimeLoad = False
         self.update()
         self.update_idletasks()
-        self.playSoundChecking(self.profitability_bf, self.dataResponse['dogeming'][0])
+        try:
+            self.playSoundChecking(self.profitability_bf, self.dataResponse['dogeming'][0])
+        except Exception as e:
+            f = open(self.log_file, 'a')
+            f.write("error: " + str(e) + "\n")
+            f.close()
+            pass
         # set profit before  = profit current 
         self.profitability_bf = self.dataResponse['dogeming'][0]
 
@@ -187,8 +221,11 @@ class DogecoinApp(tk.Tk):
         labels[4]['text'] = self.dataResponse['dogechain'][1][4]
     def updateWhattomine(self):
         self.rev_per_day_label['text'] = self.dataResponse['whattomine']
-    def updateWhattomineCal(self):
-        self.rev_per_day_cal_label['text'] = str(self.dataWhattomineCal)
+    def updateWhattomineCal(self, data):
+        self.rev_per_day_cal_label['text'] = str(data)
+
+    def updateFraltalBitcoin(self):
+        self.fractalbitcoin_label['text'] = self.dataResponse['fratabitcoin']
     def periodically_called(self):
         """Periodically refreshes data."""
         try:
@@ -224,6 +261,11 @@ class DogecoinApp(tk.Tk):
         self.pool.terminate()
         self.pool.join()
         self.destroy()
+    def reset_window(self):
+        """Clears all widgets and reloads the Tkinter window without closing it."""
+        for widget in self.winfo_children():
+            widget.destroy()  # Remove all widgets
+        self.create_widgets()
 if __name__ == "__main__":
     multiprocessing.freeze_support()
     app = DogecoinApp()
