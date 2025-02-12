@@ -7,8 +7,10 @@ from datetime import datetime,timezone
 from selenium import webdriver
 # from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.webdriver.common.by import By
 import time
+import subprocess
 
 
 def crawling():
@@ -43,7 +45,10 @@ def crawlingSelenium(miningDiff, fee, isCalculating):
     options.add_argument('--private')
     options.add_argument('--headless')
     miningDiff = miningDiff * 10000000
-    driver = webdriver.Firefox(executable_path=r'./geckodriver.exe', options=options)
+    # driver = webdriver.Firefox(executable_path=r'./geckodriver.exe', options=options)
+    webdriver_service = FirefoxService(executable_path=r"./geckodriver.exe")
+    webdriver_service.creation_flags = subprocess.CREATE_NO_WINDOW 
+    driver = webdriver.Firefox(service=webdriver_service, options=options)
     # crawling data
     # what to mine
     if isCalculating is False:
@@ -63,8 +68,8 @@ def crawlingSelenium(miningDiff, fee, isCalculating):
         firstBlockTime = firstBlock.find_element(By.CLASS_NAME, 'font11').text 
         element.clear()
         driver.delete_all_cookies()
-        # driver.close()
-        driver.quit()
+        driver.close()
+        # driver.quit()
         return [rev_BTCperDay, firstBlockName1, firstBlockName2, firstBlockName3, firstBlockTransaction, firstBlockTime]
     else:
         # calculating data
@@ -73,8 +78,8 @@ def crawlingSelenium(miningDiff, fee, isCalculating):
         rev_BTCperDaywFee = element[8].text
         element.clear()
         driver.delete_all_cookies()
-        # driver.close()
-        driver.quit()
+        driver.close()
+        # driver.quit()
         return rev_BTCperDaywFee
 
 
@@ -110,23 +115,26 @@ def crawlDogeChain():
     return [difficulty_DogeChain, dataBlock]
 
 def crawWhattomine():
-    # try:
+    try:
 
-    # setup firefox site
-    options = Options()
-    options.add_argument('--private')
-    options.add_argument('--headless')
-    # driver = webdriver.Firefox(options=options)
-    driver = webdriver.Firefox(executable_path=r'./geckodriver.exe', options=options)
-    driver.get("https://whattomine.com/coins/431-fb-sha-256?hr=1000.0")
-    element= driver.find_elements(By.CLASS_NAME, 'font-monospace')
-    rev_BTCperDay = element[8].text
-    element.clear()
-    driver.delete_all_cookies()
-    # driver.close()
-    driver.quit()
-    # except Exception as error:
-    #     print(error)
+        # setup firefox site
+        options = Options()
+        options.add_argument('--private')
+        options.add_argument('--headless')
+        # driver = webdriver.Firefox(options=options)
+        # driver = webdriver.Firefox(executable_path=r'./geckodriver.exe', options=options)
+        webdriver_service = FirefoxService(executable_path=r"./geckodriver.exe")
+        webdriver_service.creation_flags = subprocess.CREATE_NO_WINDOW 
+        driver = webdriver.Firefox(service=webdriver_service, options=options)
+        driver.get("https://whattomine.com/coins/431-fb-sha-256?hr=1000.0")
+        element= driver.find_elements(By.CLASS_NAME, 'font-monospace')
+        rev_BTCperDay = element[8].text
+        element.clear()
+        driver.delete_all_cookies()
+        driver.close()
+        # driver.quit()
+    except Exception as error:
+        print(error)
     return rev_BTCperDay
 
 def crawUnisat():
@@ -134,7 +142,10 @@ def crawUnisat():
     options.add_argument('--private')
     options.add_argument('--headless')
     # driver = webdriver.Firefox(options=options)
-    driver = webdriver.Firefox(executable_path=r'./geckodriver.exe', options=options)
+    # driver = webdriver.Firefox(executable_path=r'./geckodriver.exe', options=options)
+    webdriver_service = FirefoxService(executable_path=r"./geckodriver.exe")
+    webdriver_service.creation_flags = subprocess.CREATE_NO_WINDOW 
+    driver = webdriver.Firefox(service=webdriver_service, options=options)
     driver.get("https://fractal.unisat.io/explorer/block/ef9dc9d5ba31f410d67f1be2f6419c21cbfe17746b4bca08b283fd412eb26485")
     time.sleep(0.5)
     element= driver.find_elements(By.CLASS_NAME, 'not-confirmed-block-div-right-confirmed')
@@ -146,8 +157,8 @@ def crawUnisat():
     firstBlockTime = firstBlock.find_element(By.CLASS_NAME, 'font11').text 
     element.clear()
     driver.delete_all_cookies()
-    # driver.close()
-    driver.quit()
+    driver.close()
+    # driver.quit()
     return [firstBlockName1, firstBlockName2, firstBlockName3, firstBlockTransaction, firstBlockTime]
 
 def crawWhattomineCal(miningDiff, fee):
@@ -157,14 +168,17 @@ def crawWhattomineCal(miningDiff, fee):
         options.add_argument('--private')
         options.add_argument('--headless')
         # driver = webdriver.Firefox(options=options)
-        driver = webdriver.Firefox(executable_path=r'./geckodriver.exe', options=options)
+        # driver = webdriver.Firefox(executable_path=r'./geckodriver.exe', options=options)
+        webdriver_service = FirefoxService(executable_path=r"./geckodriver.exe")
+        webdriver_service.creation_flags = subprocess.CREATE_NO_WINDOW 
+        driver = webdriver.Firefox(service=webdriver_service, options=options)
         driver.get(f"https://whattomine.com/coins/431-fb-sha-256?hr=1000.0&d_enabled=true&d={str(float(miningDiff))}&fee={str(float(fee))}")
         element= driver.find_elements(By.CLASS_NAME, 'font-monospace')
         rev_BTCperDaywFee = element[8].text
         element.clear()
         driver.delete_all_cookies()
-        # driver.close()
-        driver.quit()
+        driver.close()
+        # driver.quit()
     else:
         rev_BTCperDaywFee = 'Error Input'
     return rev_BTCperDaywFee
