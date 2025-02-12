@@ -94,6 +94,14 @@ class DogecoinApp(tk.Tk):
         inputDogeMin_entry.grid(row = 5, column= 0,padx=10, pady=5)
         inputDogeMax_entry.grid(row = 5, column= 1,padx=10, pady=5)
         inputDogeCurrent_entry.grid(row = 5, column= 2,padx=10, pady=5)
+        # resest
+        self.buttonResest = Button(self, text="ReLoad", 
+                                   font=("Arial", 12, "bold"),  # Chữ đậm
+                                   bg="black",  # Màu nền xám đậm
+                                   fg="black",  # Màu chữ trắng
+                                   relief="flat",  # Xóa viền mặc định
+                                   padx=1, pady=1, command=self.reset_window)
+        self.buttonResest.grid(row = 5, column= 4,padx=10, pady=5)
         # Label
         self.checkDataDogeMin= Label(self, text='checking', fg='firebrick2', background='gray20')
         self.checkDataDogeMax = Label(self, text='checking', fg='firebrick2', background='gray20')
