@@ -89,7 +89,7 @@ def crawlFractalbitcoin():
     dt = datetime.now(timezone.utc).replace(tzinfo=None)
     timeStamp = int(datetime.timestamp(dt))
     resMini = requests.get('https://www.mining-dutch.nl/pools/fractalbitcoin.php?page=api&action=getdashboarddata&api_key=&id=&_=' + str(timeStamp))
-    difficulty_frata = int(resMini.json()['getdashboarddata']['data']['network']['difficulty'][0:4])
+    difficulty_frata = round(int(resMini.json()['getdashboarddata']['data']['network']['difficulty']) / 10000000)
     return difficulty_frata
 def crawlDogeChain():
     dt = datetime.now(timezone.utc).replace(tzinfo=None)

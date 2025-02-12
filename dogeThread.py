@@ -195,9 +195,9 @@ class DogecoinApp(tk.Tk):
         # profit
         labels[0]['text'] = self.dataResponse['dogeming'][0]
         # mining Diff
-        labels[1]['text'] = self.dataResponse['dogechain'][0]
+        labels[1]['text'] = self.dataResponse['dogeming'][1]
         # chain Diff
-        labels[2]['text'] = self.dataResponse['dogeming'][1]
+        labels[2]['text'] = self.dataResponse['dogechain'][0]
         # profit response
         labels[3]['text'] = self.dataResponse['dogeming'][2]
         # check data input Doge Cost Min - Max
