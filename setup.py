@@ -7,7 +7,7 @@ Usage:
 
 import setuptools  
 
-APP = ['doge.py']
+APP = ['dogeThread.py']
 DATA_FILES = []
 OPTIONS = {'argv_emulation': True, 'packages' : ['requests', 'bs4', 'datetime', 'tkinter', 'playsound', 'AppKit']}
 
