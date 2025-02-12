@@ -73,7 +73,7 @@ class DogecoinApp(tk.Tk):
         self.buttonCal = Button(self, text="Calculate", 
                                    font=("Arial", 12, "bold"),  # Chữ đậm
                                    bg="black",  # Màu nền xám đậm
-                                   fg="black",  # Màu chữ trắng
+                                   fg="white",  # Màu chữ trắng
                                    relief="flat",  # Xóa viền mặc định
                                    padx=1, pady=1, command=self.buttonCalClicked)
         self.fractalbitcoin_label =  Label(self, text="checking", fg="yellow", background="gray20")
@@ -98,7 +98,7 @@ class DogecoinApp(tk.Tk):
         self.buttonResest = Button(self, text="ReLoad", 
                                    font=("Arial", 12, "bold"),  # Chữ đậm
                                    bg="black",  # Màu nền xám đậm
-                                   fg="black",  # Màu chữ trắng
+                                   fg="white",  # Màu chữ trắng
                                    relief="flat",  # Xóa viền mặc định
                                    padx=1, pady=1, command=self.reset_window)
         self.buttonResest.grid(row = 5, column= 4,padx=10, pady=5)
@@ -169,7 +169,7 @@ class DogecoinApp(tk.Tk):
     def processResult(self, results):
         self.dataResponse.update(dict(zip(self.functionCrawling, results)))
         self.fratabitcoin = self.dataResponse['fratabitcoin']
-        print(self.dataResponse)
+        # print(self.dataResponse)
         if self.dataResponse['dogechain'][0] == self.dataResponse['dogeming'][1]:
             self.dataResponse['dogeming'][2] = 'Sai Khối'
         try: 
