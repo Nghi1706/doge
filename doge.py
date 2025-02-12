@@ -1,261 +1,281 @@
-from tkinter import *
+import os
+import sys
+import tkinter as tk
+from tkinter import Label, Entry, Button
 from playsound import playsound
-from crawling import crawling,crawlingSelenium
-import os,sys
-from threading import Thread
+from crawling import crawlDogeChain,crawlDogeMing, crawWhattomine, crawWhattomineCal, crawUnisat, crawlFractalbitcoin
+import multiprocessing
 
-# ui
-# set windown width
-root = Tk()
-root.geometry('600x400')
-root.title('DogeCoin')
-root.config(background='gray20')
-# data
-input1Data = DoubleVar(root)
-input2Data = DoubleVar(root)
-input3Data = DoubleVar(root)
-inputFees = DoubleVar(root)
-profitability_bf = int()
-difficultMining = int()
-threadList = {'threadProfit' : Thread(), 'threadUW' : Thread(), 'threadUWwithFees' : Thread()}
-# threading
-# threadingGetdata = Thread(target=getDataProfit(), name='getDataProfit')
-# threadList['threadProfit'] = threadingGetdata
-# threadingGetdataUW = Thread(target=getDataUW(), name='getDataUW')
-# threadList['threadUW'] = threadingGetdataUW
-# threadingGetdataUWwithFees = Thread(target=getDataUWwithFees(), name='getDataUWwithFees')
-# threadList['threadUWwithFees'] = threadingGetdataUWwithFees
-# create Threading
-def threadingGetdataProfit():
-    # threadingGetdata = Thread(target=getDataProfit(), name='getDataProfit')
-    # threadList['threadProfit'] = threadingGetdata
-    # threadingGetdata.start()
-    print(Thread(name='getDataUW').is_alive())
-    Thread(target=getDataProfit(), name='getDataProfit').start()
+class DogecoinApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
 
-def threadinGetdataUW():
-    # threadingGetdataUW = Thread(target=getDataUW(), name='getDataUW')
-    # threadList['threadUW'] = threadingGetdataUW
-    # threadingGetdataUW.start()
-    Thread(target=getDataUW(), name='getDataUW').start()
+        # config main windown
+        self.title("Dogecoin Mining Tracker")
+        self.geometry("650x400")
+        self.config(background="gray20")
 
+        # Data Variables
+        self.inputDogeMin = tk.DoubleVar(self)
+        self.inputDogeMax = tk.DoubleVar(self)
+        self.inputDogeCurrent = tk.DoubleVar(self)
+        self.inputFees = tk.DoubleVar(self)
+        self.profitability_bf = 0
+        self.fratabitcoin = 0
+        self.firstTimeLoad = True
+        self.pool = multiprocessing.Pool(processes=min(6, multiprocessing.cpu_count()))
+        self.dataResponse = {'dogechain': [], 'dogeming': [], 'whattomine' : [], 'fratabitcoin' : []} 
+        self.dataWhattomineCal = 0
+        self.functionCrawling = ['dogechain', 'dogeming', 'whattomine', 'unisat', 'fratabitcoin']
+        self.audio_file = self.get_resource_path('notification.mp3')
+        self.log_file = self.get_resource_path('log.txt')
 
-def threadinGetdataUWwithFees():
-    # threadingGetdataUWwithFees = Thread(target=getDataUWwithFees(), name='getDataUWwithFees')
-    # threadList['threadUWwithFees'] = threadingGetdataUWwithFees
-    # threadingGetdataUWwithFees.start()
-    Thread(target=getDataUWwithFees(), name='getDataUWwithFees').start()
+        # UI Initialization
+        self.create_widgets()
+        # Handle Window Close
+        self.protocol("WM_DELETE_WINDOW", self.on_closing_pool)
+        # Start periodic updates
+        self.after(100, self.periodically_called)
 
-# update UI
-def updateUIProfit(profitability,difficulty,current_difficulty,responseScreen, dataBlock, profitability_bf):
-    label_profitability_data['text'] = str(profitability)
-    label_difficulty_data['text'] = difficulty
-    label_current_difficulty_data['text'] = current_difficulty
-    label_auto_response_data['text'] = responseScreen
-    label_block_data['text'] = dataBlock[0]
-    label_time_data['text'] = dataBlock[1] + ' ago'
-    label_transaction_data['text'] = dataBlock[2]
-    label_reward_data['text'] = dataBlock[3]
-    label_size_data['text'] = dataBlock[4]
-    checkData1['text'] = profitability + float(input1Data.get())
-    checkData2['text'] = profitability+ float(input2Data.get())
-    root.update()
-    root.update_idletasks()
-    playSoundChecking(profitability_bf, profitability)
+    def create_widgets(self):
+        """Create UI components and place them in the grid."""
+        self.create_profitability_section()
+        self.create_whattomine_section()
+        self.create_cost_doge_section()
+        self.create_unisat_section()
+        self.create_BlockDoge_info_section()
+        self.checkDissableButton()
+
+    def checkDissableButton(self):
+        if self.fratabitcoin == 0:
+            self.buttonCal['state'] = tk.DISABLED
+        else:
+            self.buttonCal['state'] = tk.NORMAL
+
+    def create_profitability_section(self):
+        """Creates UI elements for profitability details."""
+        headers = ["Profitability", "Mining Diff", "Dogechain Diff", "Response"]
+        for i, h in enumerate(headers):
+            Label(self, text=h, fg="white", background="gray20").grid(row=0, column=i, padx=10, pady=5)
+        # data profit
+        self.profitability_data_labels = [Label(self, text="checking", fg="white", background="gray20") for _ in headers]
+        for i, lbl in enumerate(self.profitability_data_labels):
+            lbl.grid(row=1, column=i, padx=10, pady=5)
+
+    def create_whattomine_section(self):
+        """Creates UI elements for whattomine data."""
+        header = ['Rev.BTCperDay', 'Calculating', 'Fees', 'Fractal Bitcoin', '']
+        for i, h in enumerate(header):
+            Label(self, text=h, fg="yellow", background="gray20").grid(row=2, column=i, padx=10, pady=5)
+        self.rev_per_day_label = Label(self, text="checking", fg="yellow", background="gray20")
+        self.rev_per_day_cal_label = Label(self, text="checking", fg="yellow", background="gray20")
+        self.input_Fees = Entry(self, width=10, textvariable=self.inputFees, fg="yellow", background="gray20")
+        self.buttonCal = Button(self, text="Calculate", 
+                                   font=("Arial", 12, "bold"),  # Chữ đậm
+                                   bg="black",  # Màu nền xám đậm
+                                   fg="black",  # Màu chữ trắng
+                                   relief="flat",  # Xóa viền mặc định
+                                   padx=1, pady=1, command=self.buttonCalClicked)
+        self.fractalbitcoin_label =  Label(self, text="checking", fg="yellow", background="gray20")
+        self.rev_per_day_label.grid(row=3, column=0, padx=10, pady=5)
+        self.rev_per_day_cal_label.grid(row=3, column=1, padx=10, pady=5)
+        self.input_Fees.grid(row=3, column=2, padx=10, pady=5)
+        self.fractalbitcoin_label.grid(row=3, column=3, padx=10, pady=5)
+        self.buttonCal.grid(row=3, column=4, padx=10, pady=5)
+
+    def create_cost_doge_section(self):
+        # input
+        header = ['Giá doge', 'Giá SuperDoge', 'Giá vào lệnh']
+        for i, h in enumerate(header):
+            Label(self, text=h, fg="firebrick2", background="gray20").grid(row = 4, column=i,padx=10, pady=5)
+        inputDogeMin_entry = Entry(self, width = 10, textvariable=self.inputDogeMin, fg='firebrick2', background='gray20')
+        inputDogeMax_entry = Entry(self, width = 10, textvariable=self.inputDogeMax, fg='firebrick2', background='gray20')
+        inputDogeCurrent_entry = Entry(self, width = 10, textvariable=self.inputDogeCurrent, fg='firebrick2', background='gray20')
+        inputDogeMin_entry.grid(row = 5, column= 0,padx=10, pady=5)
+        inputDogeMax_entry.grid(row = 5, column= 1,padx=10, pady=5)
+        inputDogeCurrent_entry.grid(row = 5, column= 2,padx=10, pady=5)
+        # resest
+        self.buttonResest = Button(self, text="ReLoad", 
+                                   font=("Arial", 12, "bold"),  # Chữ đậm
+                                   bg="black",  # Màu nền xám đậm
+                                   fg="black",  # Màu chữ trắng
+                                   relief="flat",  # Xóa viền mặc định
+                                   padx=1, pady=1, command=self.reset_window)
+        self.buttonResest.grid(row = 5, column= 4,padx=10, pady=5)
+        # Label
+        self.checkDataDogeMin= Label(self, text='checking', fg='firebrick2', background='gray20')
+        self.checkDataDogeMax = Label(self, text='checking', fg='firebrick2', background='gray20')
+        self.checkDataDogeMin.grid(row = 6, column= 0,padx=10, pady=5)
+        self.checkDataDogeMax.grid(row = 6, column= 1,padx=10, pady=5)
+    def create_unisat_section(self):
+        """Creates UI elements for unisat data."""
+        Label(self, text="Unisat", fg="green2", background="gray20").grid(row=7, column=0, padx=10, pady=5)
+
+        self.unisat_labels = [Label(self, text="checking", fg="green2", background="gray20") for _ in range(5)]
+        for i, lbl in enumerate(self.unisat_labels):
+            lbl.grid(row=8, column=i, padx=10, pady=5)
+
+    def create_BlockDoge_info_section(self):
+        """Creates UI elements for block mining info."""
+        headers = ["Block", "Time", "Transactions", "Reward", "Size"]
+        self.blockDoge_labels = [Label(self, text=h, fg="white", background="gray20") for h in headers]
+        for i, lbl in enumerate(self.blockDoge_labels):
+            lbl.grid(row=9, column=i, padx=10, pady=5)
+
+        self.blockDoge_data_labels = [Label(self, text="checking", fg="white", background="gray20") for _ in headers]
+        for i, lbl in enumerate(self.blockDoge_data_labels):
+            lbl.grid(row=10, column=i, padx=10, pady=5)
+
+    @staticmethod
+    def sendRequestProcess(crawf):
+        if crawf == 'dogechain':
+            result = crawlDogeChain()
+        elif crawf == 'dogeming':
+            result = crawlDogeMing()
+        elif crawf == 'unisat':
+            result = crawUnisat()
+        elif crawf == 'fratabitcoin':
+            result = crawlFractalbitcoin()
+        else:
+            result = crawWhattomine()
+        return result
+        
+    @staticmethod
+    def background_task(fractalBCoinDiff, fee):
+        result = crawWhattomineCal(fractalBCoinDiff, fee)
+        return result
+
+    def buttonCalClicked(self):
+        self.buttonCal['state'] = tk.DISABLED
+        try:
+            self.pool.apply_async(self.background_task,args=(self.fratabitcoin, float(self.inputFees.get())), callback=self.process_result)
+
+        except Exception as e:
+            self.buttonCal['state'] = tk.NORMAL
+            f = open(self.log_file, 'a')
+            f.write("error: " + str(e) + "\n")
+            f.close()
+            pass
+
+        # button
+    def process_result(self, result):
+        self.dataWhattomineCal = result
+        self.buttonCal['state'] = tk.DISABLED
+        self.updateWhattomineCal(result)
+        self.update()
+        self.update_idletasks()
+        self.buttonCal['state'] = tk.NORMAL
+
+    def processResult(self, results):
+        self.dataResponse.update(dict(zip(self.functionCrawling, results)))
+        self.fratabitcoin = self.dataResponse['fratabitcoin']
+        print(self.dataResponse)
+        if self.dataResponse['dogechain'][0] == self.dataResponse['dogeming'][1]:
+            self.dataResponse['dogeming'][2] = 'Sai Khối'
+        try: 
+            self.updateUIPprofitAndCostCoin()
+            self.updateUIUnisat()
+            self.updateBlockDogeInfo()
+            self.updateWhattomine()
+            self.updateFraltalBitcoin()
+        except Exception as e:
+            f = open(self.log_file, 'a')
+            f.write("error: " + str(e) + "\n")
+            f.close()
+            pass
+        if self.firstTimeLoad :
+            self.buttonCal['state'] = tk.NORMAL
+            self.firstTimeLoad = False
+        self.update()
+        self.update_idletasks()
+        try:
+            self.playSoundChecking(self.profitability_bf, self.dataResponse['dogeming'][0])
+        except Exception as e:
+            f = open(self.log_file, 'a')
+            f.write("error: " + str(e) + "\n")
+            f.close()
+            pass
+        # set profit before  = profit current 
+        self.profitability_bf = self.dataResponse['dogeming'][0]
+
+    # update UI Profit and Cost of Coin Playsound
+    def updateUIPprofitAndCostCoin(self):
+        labels = self.profitability_data_labels 
+        # profit
+        labels[0]['text'] = self.dataResponse['dogeming'][0]
+        # mining Diff
+        labels[1]['text'] = self.dataResponse['dogeming'][1]
+        # chain Diff
+        labels[2]['text'] = self.dataResponse['dogechain'][0]
+        # profit response
+        labels[3]['text'] = self.dataResponse['dogeming'][2]
+        # check data input Doge Cost Min - Max
+        self.checkDataDogeMin['text'] = float(self.inputDogeMin.get()) + self.dataResponse['dogeming'][0]
+        self.checkDataDogeMax['text'] = float(self.inputDogeMax.get()) + self.dataResponse['dogeming'][0]
+    # update UI Unisat
+    def updateUIUnisat(self):
+        labels = self.unisat_labels
+        labels[0]['text'] = self.dataResponse['unisat'][0]
+        labels[1]['text'] = self.dataResponse['unisat'][1]
+        labels[2]['text'] = self.dataResponse['unisat'][2]
+        labels[3]['text'] = self.dataResponse['unisat'][3]
+        labels[4]['text'] = self.dataResponse['unisat'][4]
+
+    def updateBlockDogeInfo(self):
+        labels = self.blockDoge_data_labels
+        labels[0]['text'] = self.dataResponse['dogechain'][1][0]
+        labels[1]['text'] = self.dataResponse['dogechain'][1][1]
+        labels[2]['text'] = self.dataResponse['dogechain'][1][2]
+        labels[3]['text'] = self.dataResponse['dogechain'][1][3]
+        labels[4]['text'] = self.dataResponse['dogechain'][1][4]
+    def updateWhattomine(self):
+        self.rev_per_day_label['text'] = self.dataResponse['whattomine']
+    def updateWhattomineCal(self, data):
+        self.rev_per_day_cal_label['text'] = str(data)
+
+    def updateFraltalBitcoin(self):
+        self.fractalbitcoin_label['text'] = self.dataResponse['fratabitcoin']
+    def periodically_called(self):
+        """Periodically refreshes data."""
+        try:
+            self.pool.map_async(self.sendRequestProcess, self.functionCrawling,callback=self.processResult)
+            pass
+        except Exception as e:
+            f = open(self.log_file, 'a')
+            f.write("error: " + str(e) + "\n")
+            f.close()
+            pass
+        self.after(10000, self.periodically_called)
+
+    # path to build
+    def get_resource_path(self, filename):
+        # if run with file .app get this path
+        if getattr(sys, 'frozen', False):
+            base_path = os.path.join(sys._MEIPASS, "Contents/Resources")
+        else:
+            base_path = os.path.abspath(".")
+
+        return os.path.join(base_path, filename)
     
-def updateUIUW(revPerDay,unitsatName1, unitsatName2,unisatName3, unitsatTransaction, unisatTime):
-    label_RevPerDay_data['text'] = str(revPerDay)
-    label_unitsat_name1['text'] = unitsatName1
-    label_unitsat_name2['text'] = unitsatName2
-    label_unitsat_name3['text'] = unisatName3
-    label_unitsat_Transaction['text'] = unitsatTransaction
-    label_unitsat_Time['text'] = unisatTime
-    root.update()
-    root.update_idletasks()
+    def playSoundChecking(self, profitability_bf, profitability):
+        if int(profitability_bf) != int(profitability):
+            # profit changed
+            if isinstance(float(self.inputDogeMin.get()), float) and isinstance(float(self.inputDogeMax.get()), float) and  isinstance(float(self.inputDogeCurrent.get()), float) and  float(self.inputDogeCurrent.get()) > 0.0:
+                if (profitability + float(self.inputDogeMin.get()) > float(self.inputDogeCurrent.get())) or (profitability + float(self.inputDogeMax.get()) > float(self.inputDogeCurrent.get())):
+                    # playsound('notification.mp3')
+                    playsound(self.audio_file)
 
-def updateUIUWwithFees(revPerDaywithFees):
-    label_RevPerDayCal_data['text'] = str(revPerDaywithFees)
-    buttonCal['state'] = NORMAL
-    root.update()
-    root.update_idletasks()
-
-def getDataUW():
-    revPerDay,unitsatName1, unitsatName2,unisatName3, unitsatTransaction, unisatTime = crawlingSelenium(0,0,False)
-    updateUIUW( revPerDay,unitsatName1, unitsatName2,unisatName3, unitsatTransaction, unisatTime)
-
-def getDataUWwithFees():
-    revPerDaywithFees = crawlingSelenium(difficultMining, inputFees.get(), True)
-    updateUIUWwithFees(revPerDaywithFees)
-def getDataProfit():
-    global profitability_bf
-    global difficultMining
-    profitability,difficulty,current_difficulty,responseScreen, dataBlock = crawling()
-    difficultMining = difficulty
-    updateUIProfit(profitability,difficulty,current_difficulty,responseScreen, dataBlock, profitability_bf)
-    profitability_bf = profitability
-
-def calculate():
-    threadinGetdataUWwithFees()
-    # threadList['threadUWwithFees'].start()
-
-# path to build
-def get_resource_path(filename):
-    # if run with file .app get this path
-    if getattr(sys, 'frozen', False):
-        base_path = os.path.join(sys._MEIPASS, "Contents/Resources")
-    else:
-        base_path = os.path.abspath(".")
-
-    return os.path.join(base_path, filename)
-
-def playSoundChecking(profitability_bf, profitability):
-    if int(profitability_bf) != int(profitability):
-        # profit changed
-        if isinstance(float(input1Data.get()), float) and isinstance(float(input2Data.get()), float) and  isinstance(float(input3Data.get()), float) and  float(input3Data.get()) > 0.0:
-            if (profitability + float(input1Data.get()) > float(input3Data.get())) or (profitability + float(input2Data.get()) > float(input3Data.get())):
-                # playsound('notification.mp3')
-                audio_file = get_resource_path("notification.mp3")
-                playsound(audio_file)
-
-
-
-
-# threading
-# threadingGetdata = Thread(target=getDataProfit(), name='getDataProfit')
-# threadList['threadProfit'] = threadingGetdata
-# threadingGetdataUW = Thread(target=getDataUW(), name='getDataUW')
-# threadList['threadUW'] = threadingGetdataUW
-# threadingGetdataUWwithFees = Thread(target=getDataUWwithFees(), name='getDataUWwithFees')
-# threadList['threadUWwithFees'] = threadingGetdataUWwithFees
-def periodically_called():
-    try:
-        # threadinGetdataUW()
-        # threadingGetdataProfit()
-        # threadList['threadProfit'].start()
-        # threadList['threadUW'].start()
-        pass
-    except Exception as e:
-        f = open(get_resource_path('log.txt'), 'a')
-        f.write("error: " + str(e) + "\n")
-        f.close()
-        pass
-
-    root.after(10000, periodically_called)
-
-
-# table 1
-# Label
-label_profitability = Label(root, text='Profitability', fg='white', background='gray20')
-label_difficulty = Label(root, text='Mining Diff', fg='white', background='gray20')
-label_current_difficulty = Label(root, text='Dogechain Diff', fg='white', background='gray20')
-label_auto_response = Label(root, text='Response', fg='white', background='gray20')
-# Grid
-label_profitability.grid(row = 0, column= 0,padx=10, pady=5)
-label_difficulty.grid(row = 0, column= 1,padx=10, pady=5)
-label_current_difficulty.grid(row = 0, column= 2,padx=10, pady=5)
-label_auto_response.grid(row = 0, column= 3,padx=10, pady=5)
-# data
-label_profitability_data = Label(root, text='checking', fg='white', background='gray20')
-label_difficulty_data = Label(root, text='checking', fg='white', background='gray20')
-label_current_difficulty_data = Label(root, text='checking', fg='white', background='gray20')
-label_auto_response_data = Label(root, text='checking', fg='white', background='gray20')
-
-label_profitability_data.grid(row = 1, column= 0,padx=10, pady=5)
-label_difficulty_data.grid(row = 1, column= 1,padx=10, pady=5)
-label_current_difficulty_data.grid(row = 1, column= 2,padx=10, pady=5)
-label_auto_response_data.grid(row = 1, column= 3,padx=10, pady=5)
-
-# table : whattomine
-# Label
-label_RevPerDay = Label(root, text='Rev.BTCperDay', fg='yellow', background='gray20')
-label_RevPerDayCal = Label(root, text='Calculating', fg='yellow', background='gray20')
-label_Fees = Label(root, text='Fees', fg='yellow', background='gray20')
-# grid
-label_RevPerDay.grid(row = 2, column= 0,padx=10, pady=5)
-label_RevPerDayCal.grid(row = 2, column= 1,padx=10, pady=5)
-label_Fees.grid(row = 2, column= 2,padx=10, pady=5)
-# data
-
-# Label
-label_RevPerDay_data = Label(root, text='checking', fg='yellow', background='gray20')
-label_RevPerDayCal_data = Label(root, text='checking', fg='yellow', background='gray20')
-input_Fees = Entry(root, width = 10, textvariable=inputFees, fg='yellow', background='gray20')
-buttonCal = Button(root, text='Calulate', fg='white', background='black',command=calculate)
-# grid
-label_RevPerDay_data.grid(row = 3, column= 0,padx=10, pady=5)
-label_RevPerDayCal_data.grid(row = 3, column= 1,padx=10, pady=5)
-input_Fees.grid(row = 3, column= 2,padx=10, pady=5)
-buttonCal.grid(row = 3, column= 3,padx=10, pady=5)
-
-
-# table 2 : input and check
-# input
-input1_label = Label(root, text='Giá doge', fg='firebrick2', background='gray20')
-input2_label = Label(root, text='Giá SuperDoge', fg='firebrick2', background='gray20')
-input3_label = Label(root, text='Giá vào lệnh', fg='firebrick2', background='gray20')
-checkedata = Label(root, text='')
-input1_label.grid(row = 4, column= 0,padx=10, pady=5)
-input2_label.grid(row = 4, column= 1,padx=10, pady=5)
-input3_label.grid(row = 4, column= 2,padx=10, pady=5)
-# checkedata.grid(row = 5, column= 3,padx=10, pady=5)
-input1_entry = Entry(root, width = 10, textvariable=input1Data, fg='firebrick2', background='gray20')
-input2_entry = Entry(root, width = 10, textvariable=input2Data, fg='firebrick2', background='gray20')
-input3_entry = Entry(root, width = 10, textvariable=input3Data, fg='firebrick2', background='gray20')
-input1_entry.grid(row = 5, column= 0,padx=10, pady=5)
-input2_entry.grid(row = 5, column= 1,padx=10, pady=5)
-input3_entry.grid(row = 5, column= 2,padx=10, pady=5)
-# Label
-checkData1 = Label(root, text='checking', fg='firebrick2', background='gray20')
-checkData2 = Label(root, text='checking', fg='firebrick2', background='gray20')
-checkData1.grid(row = 6, column= 0,padx=10, pady=5)
-checkData2.grid(row = 6, column= 1,padx=10, pady=5)
-
-# table : Unisat
-# Label
-label_unitsat = Label(root, text='Unisat', fg='green2', background='gray20')
-# grid
-label_unitsat.grid(row = 7, column= 0,padx=10, pady=5)
-# data
-# Label
-label_unitsat_name1 = Label(root, text='checking', fg='green2', background='gray20')
-label_unitsat_name2 = Label(root, text='checking', fg='green2', background='gray20')
-label_unitsat_name3 = Label(root, text='checking', fg='green2', background='gray20')
-label_unitsat_Transaction = Label(root, text='checking', fg='green2', background='gray20')
-label_unitsat_Time = Label(root, text='checking', fg='green2', background='gray20')
-# grid
-label_unitsat_name1.grid(row = 8, column= 0,padx=10, pady=5)
-label_unitsat_name2.grid(row = 8, column= 1,padx=10, pady=5)
-label_unitsat_name3.grid(row = 8, column= 2,padx=10, pady=5)
-label_unitsat_Transaction.grid(row = 8, column= 3,padx=10, pady=5)
-label_unitsat_Time.grid(row = 8, column= 4,padx=10, pady=5)
-
-
-# table 3
-# Label
-label_block = Label(root, text='Block', fg='white', background='gray20')
-label_time = Label(root, text='Time', fg='white', background='gray20')
-label_transaction = Label(root, text='Transactions', fg='white', background='gray20')
-label_reward = Label(root, text='Reward', fg='white', background='gray20')
-label_size = Label(root, text='Size', fg='white', background='gray20')
-# Grid
-label_block.grid(row = 9, column= 0,padx=10, pady=5)
-label_time.grid(row = 9, column= 1,padx=10, pady=5)
-label_transaction.grid(row = 9, column= 2,padx=10, pady=5)
-label_reward.grid(row = 9, column= 3,padx=10, pady=5)
-label_size.grid(row = 9, column= 4,padx=10, pady=5)
-
-# data
-label_block_data = Label(root, text='checking', fg='white', background='gray20')
-label_time_data = Label(root, text='checking', fg='white', background='gray20')
-label_transaction_data = Label(root, text='checking', fg='white', background='gray20')
-label_reward_data = Label(root, text='checking', fg='white', background='gray20')
-label_size_data = Label(root, text='checking', fg='white', background='gray20')
-# Grid
-label_block_data.grid(row = 10, column= 0,padx=10, pady=5)
-label_time_data.grid(row = 10, column= 1,padx=10, pady=5)
-label_transaction_data.grid(row = 10, column= 2,padx=10, pady=5)
-label_reward_data.grid(row = 10, column= 3,padx=10, pady=5)
-label_size_data.grid(row = 10, column= 4,padx=10, pady=5)
-
-root.after(10, periodically_called)
-root.mainloop()
+    def on_closing_pool(self):
+        self.pool.close()
+        self.pool.terminate()
+        self.pool.join()
+        self.destroy()
+    def reset_window(self):
+        """Clears all widgets and reloads the Tkinter window without closing it."""
+        for widget in self.winfo_children():
+            widget.destroy()  # Remove all widgets
+        self.create_widgets()
+if __name__ == "__main__":
+    multiprocessing.freeze_support()
+    app = DogecoinApp()
+    app.mainloop()

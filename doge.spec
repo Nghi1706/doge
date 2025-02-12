@@ -5,7 +5,7 @@ a = Analysis(
     ['doge.py'],
     pathex=[],
     binaries=[],
-    datas=[('notification.mp3','./Contents/Resources/'), ('log.txt','./Contents/Resources/')],
+    datas=[('notification.mp3', 'Contents/Resources/'), ('log.txt', 'Contents/Resources/')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='doge',
+    name='dogeThread',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -38,7 +38,7 @@ exe = EXE(
 )
 app = BUNDLE(
     exe,
-    name='doge.app',
+    name='dogeThread.app',
     icon=None,
     bundle_identifier=None,
 )
