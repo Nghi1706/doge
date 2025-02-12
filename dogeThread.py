@@ -143,6 +143,7 @@ class DogecoinApp(tk.Tk):
             self.pool.apply_async(self.background_task,args=(self.fratabitcoin, float(self.inputFees.get())), callback=self.process_result)
 
         except Exception as e:
+            self.buttonCal['state'] = tk.NORMAL
             f = open(self.log_file, 'a')
             f.write("error: " + str(e) + "\n")
             f.close()

@@ -141,7 +141,7 @@ def crawUnisat():
     return [firstBlockName1, firstBlockName2, firstBlockName3, firstBlockTransaction, firstBlockTime]
 
 def crawWhattomineCal(miningDiff, fee):
-    try:
+    if isinstance(float(miningDiff), float) and isinstance(float(fee), float):
         miningDiff = float(miningDiff) * 10000000
         options = Options()
         options.add_argument('--private')
@@ -153,10 +153,9 @@ def crawWhattomineCal(miningDiff, fee):
         element.clear()
         driver.delete_all_cookies()
         driver.close()
-    except Exception as e:
+    else:
         rev_BTCperDaywFee = 'Error Input'
     return rev_BTCperDaywFee
-
 # print(crawlDogeChain())
 # print(crawlDogeMing())
 # print(crawWhattomine())
