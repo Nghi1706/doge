@@ -25,7 +25,7 @@ class DogecoinApp(tk.Tk):
         self.firstTimeLoad = True
         self.pool = multiprocessing.Pool(processes=min(6, multiprocessing.cpu_count()))
         self.dataResponse = {'dogechain': {}, 'dogeming': {}, 'whattomine' : {}, 'fratabitcoin' : {}} 
-        self.dataWhattomineCal = 0
+        self.dataWhattomineCal = {}
         self.functionCrawling = ['dogechain', 'dogeming', 'whattomine', 'unisat', 'fratabitcoin']
         self.audio_file = self.get_resource_path('notification.mp3')
         self.log_file = self.get_resource_path('log.txt')
@@ -157,12 +157,14 @@ class DogecoinApp(tk.Tk):
         # button
     def process_result(self, result):
         self.dataWhattomineCal = result
-        self.buttonCal['state'] = tk.DISABLED
-        self.updateWhattomineCal(result)
-        self.update()
-        self.update_idletasks()
-        self.buttonCal['state'] = tk.NORMAL
-
+        if self.dataWhattomineCal['status']:
+            self.buttonCal['state'] = tk.DISABLED
+            self.updateWhattomineCal()
+            self.update()
+            self.update_idletasks()
+        else :
+            self.writeLogError(self.dataWhattomineCal['response'])
+        self.buttonCal['state'] = tk.NORMAL 
     def processResult(self, results):
         self.dataResponse.update(dict(zip(self.functionCrawling, results)))
         # print(self.dataResponse)
@@ -249,8 +251,8 @@ class DogecoinApp(tk.Tk):
         labels[4]['text'] = self.dataResponse['dogechain']['response'][1][4]
     def updateWhattomine(self):
         self.rev_per_day_label['text'] = self.dataResponse['whattomine']['response']
-    def updateWhattomineCal(self, data):
-        self.rev_per_day_cal_label['text'] = str(data)
+    def updateWhattomineCal(self):
+        self.rev_per_day_cal_label['text'] = self.dataWhattomineCal['response']
 
     def updateFraltalBitcoin(self):
         self.fractalbitcoin_label['text'] = self.dataResponse['fratabitcoin']['response']
