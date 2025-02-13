@@ -1,3 +1,0 @@
-error: expected floating-point number but got "10a"
-error: expected floating-point number but got "10b"
-error: expected floating-point number but got "100sads"

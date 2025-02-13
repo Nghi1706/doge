@@ -24,7 +24,7 @@ class DogecoinApp(tk.Tk):
         self.fratabitcoin = 0
         self.firstTimeLoad = True
         self.pool = multiprocessing.Pool(processes=min(6, multiprocessing.cpu_count()))
-        self.dataResponse = {'dogechain': [], 'dogeming': [], 'whattomine' : [], 'fratabitcoin' : []} 
+        self.dataResponse = {'dogechain': {}, 'dogeming': {}, 'whattomine' : {}, 'fratabitcoin' : {}} 
         self.dataWhattomineCal = 0
         self.functionCrawling = ['dogechain', 'dogeming', 'whattomine', 'unisat', 'fratabitcoin']
         self.audio_file = self.get_resource_path('notification.mp3')
@@ -151,10 +151,7 @@ class DogecoinApp(tk.Tk):
             self.pool.apply_async(self.background_task,args=(self.fratabitcoin, float(self.inputFees.get())), callback=self.process_result)
 
         except Exception as e:
-            self.buttonCal['state'] = tk.NORMAL
-            f = open(self.log_file, 'a')
-            f.write("error: " + str(e) + "\n")
-            f.close()
+            self.writeLogError(e)
             pass
 
         # button
@@ -168,82 +165,102 @@ class DogecoinApp(tk.Tk):
 
     def processResult(self, results):
         self.dataResponse.update(dict(zip(self.functionCrawling, results)))
-        self.fratabitcoin = self.dataResponse['fratabitcoin']
         # print(self.dataResponse)
-        if self.dataResponse['dogechain'][0] == self.dataResponse['dogeming'][1]:
-            self.dataResponse['dogeming'][2] = 'Sai Khối'
+        
         try: 
-            self.updateUIPprofitAndCostCoin()
-            self.updateUIUnisat()
-            self.updateBlockDogeInfo()
-            self.updateWhattomine()
-            self.updateFraltalBitcoin()
+            # update ui dogechain and dogeming
+            if self.dataResponse['dogechain']['status'] and self.dataResponse['dogeming']['status']:
+                if self.dataResponse['dogechain']['response'][0] == self.dataResponse['dogeming']['response'][1]:
+                    self.dataResponse['dogeming']['response'][2] = 'Sai Khối'
+                self.updateUIPprofitAndCostCoin()
+                self.updateBlockDogeInfo()
+                try:
+                    self.playSoundChecking(self.profitability_bf, self.dataResponse['dogeming']['response'][0])
+                    # set profit before  = profit current 
+                    self.profitability_bf = self.dataResponse['dogeming']['response'][0]
+                except Exception as e:
+                    self.writeLogError(e)
+                    pass
+            # write log error to control
+            else:
+                if not self.dataResponse['dogechain']['status']:
+                    self.writeLogError(self.dataResponse['dogechain']['response'])
+                if not self.dataResponse['dogeming']['status']:
+                    self.writeLogError(self.dataResponse['dogeming']['response'])
+                    
+            # update ui Unisat
+            if self.dataResponse['unisat']['status']:
+                self.updateUIUnisat()
+            # write log error to control
+            else:
+                self.writeLogError(self.dataResponse['unisat']['response'])
+            # update ui whattomine
+            if self.dataResponse['whattomine']['status']:
+                self.updateWhattomine()
+            # write log error to control
+            else:
+                self.writeLogError(self.dataResponse['whattomine']['response'])
+            # update ui fratabitcoin
+            if self.dataResponse['fratabitcoin']['status']:
+                self.fratabitcoin = self.dataResponse['fratabitcoin']['response']
+                self.updateFraltalBitcoin()
+            # write log error to control
+            else:
+                self.writeLogError(self.dataResponse['fratabitcoin']['response'])
         except Exception as e:
-            f = open(self.log_file, 'a')
-            f.write("error: " + str(e) + "\n")
-            f.close()
+            self.writeLogError(e)
             pass
         if self.firstTimeLoad :
             self.buttonCal['state'] = tk.NORMAL
             self.firstTimeLoad = False
         self.update()
         self.update_idletasks()
-        try:
-            self.playSoundChecking(self.profitability_bf, self.dataResponse['dogeming'][0])
-        except Exception as e:
-            f = open(self.log_file, 'a')
-            f.write("error: " + str(e) + "\n")
-            f.close()
-            pass
-        # set profit before  = profit current 
-        self.profitability_bf = self.dataResponse['dogeming'][0]
+
 
     # update UI Profit and Cost of Coin Playsound
     def updateUIPprofitAndCostCoin(self):
         labels = self.profitability_data_labels 
         # profit
-        labels[0]['text'] = self.dataResponse['dogeming'][0]
+        labels[0]['text'] = self.dataResponse['dogeming']['response'][0]
         # mining Diff
-        labels[1]['text'] = self.dataResponse['dogeming'][1]
+        labels[1]['text'] = self.dataResponse['dogeming']['response'][1]
         # chain Diff
-        labels[2]['text'] = self.dataResponse['dogechain'][0]
+        labels[2]['text'] = self.dataResponse['dogechain']['response'][0]
         # profit response
-        labels[3]['text'] = self.dataResponse['dogeming'][2]
+        labels[3]['text'] = self.dataResponse['dogeming']['response'][2]
         # check data input Doge Cost Min - Max
-        self.checkDataDogeMin['text'] = float(self.inputDogeMin.get()) + self.dataResponse['dogeming'][0]
-        self.checkDataDogeMax['text'] = float(self.inputDogeMax.get()) + self.dataResponse['dogeming'][0]
+        self.checkDataDogeMin['text'] = float(self.inputDogeMin.get()) + self.dataResponse['dogeming']['response'][0]
+        self.checkDataDogeMax['text'] = float(self.inputDogeMax.get()) + self.dataResponse['dogeming']['response'][0]
     # update UI Unisat
     def updateUIUnisat(self):
         labels = self.unisat_labels
-        labels[0]['text'] = self.dataResponse['unisat'][0]
-        labels[1]['text'] = self.dataResponse['unisat'][1]
-        labels[2]['text'] = self.dataResponse['unisat'][2]
-        labels[3]['text'] = self.dataResponse['unisat'][3]
-        labels[4]['text'] = self.dataResponse['unisat'][4]
+        labels[0]['text'] = self.dataResponse['unisat']['response'][0]
+        labels[1]['text'] = self.dataResponse['unisat']['response'][1]
+        labels[2]['text'] = self.dataResponse['unisat']['response'][2]
+        labels[3]['text'] = self.dataResponse['unisat']['response'][3]
+        labels[4]['text'] = self.dataResponse['unisat']['response'][4]
 
     def updateBlockDogeInfo(self):
         labels = self.blockDoge_data_labels
-        labels[0]['text'] = self.dataResponse['dogechain'][1][0]
-        labels[1]['text'] = self.dataResponse['dogechain'][1][1]
-        labels[2]['text'] = self.dataResponse['dogechain'][1][2]
-        labels[3]['text'] = self.dataResponse['dogechain'][1][3]
-        labels[4]['text'] = self.dataResponse['dogechain'][1][4]
+        labels[0]['text'] = self.dataResponse['dogechain']['response'][1][0]
+        labels[1]['text'] = self.dataResponse['dogechain']['response'][1][1]
+        labels[2]['text'] = self.dataResponse['dogechain']['response'][1][2]
+        labels[3]['text'] = self.dataResponse['dogechain']['response'][1][3]
+        labels[4]['text'] = self.dataResponse['dogechain']['response'][1][4]
     def updateWhattomine(self):
-        self.rev_per_day_label['text'] = self.dataResponse['whattomine']
+        self.rev_per_day_label['text'] = self.dataResponse['whattomine']['response']
     def updateWhattomineCal(self, data):
         self.rev_per_day_cal_label['text'] = str(data)
 
     def updateFraltalBitcoin(self):
-        self.fractalbitcoin_label['text'] = self.dataResponse['fratabitcoin']
+        self.fractalbitcoin_label['text'] = self.dataResponse['fratabitcoin']['response']
     def periodically_called(self):
         """Periodically refreshes data."""
         try:
             self.pool.map_async(self.sendRequestProcess, self.functionCrawling,callback=self.processResult)
             pass
         except Exception as e:
-            f = open(self.log_file, 'a')
-            f.write("error: " + str(e) + "\n")
-            f.close()
+            self.writeLogError(e)
             pass
         self.after(10000, self.periodically_called)
 
@@ -264,6 +281,10 @@ class DogecoinApp(tk.Tk):
                 if (profitability + float(self.inputDogeMin.get()) > float(self.inputDogeCurrent.get())) or (profitability + float(self.inputDogeMax.get()) > float(self.inputDogeCurrent.get())):
                     # playsound('notification.mp3')
                     playsound(self.audio_file)
+    def writeLogError(self, e):
+        f = open(self.log_file, 'a')
+        f.write("error: " + str(e) + "\n")
+        f.close()
 
     def on_closing_pool(self):
         self.pool.close()
