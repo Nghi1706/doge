@@ -12,7 +12,16 @@ from selenium.webdriver.common.by import By
 import time
 import subprocess
 import os
+import sys
 
+def get_resource_path(filename):
+        # if run with file .app get this path
+        if getattr(sys, 'frozen', False):
+            base_path = os.path.join(sys._MEIPASS, "Contents/Resources")
+        else:
+            base_path = os.path.abspath(".")
+
+        return os.path.join(base_path, filename)
 
 def chooseSeleniumOs():
      # setup firefox site
@@ -21,7 +30,7 @@ def chooseSeleniumOs():
     options.add_argument('--headless')
     if os.name == 'nt':
         # driver = webdriver.Firefox(executable_path=r'./geckodriver.exe', options=options)
-        webdriver_service = FirefoxService(executable_path=r"./geckodriver.exe")
+        webdriver_service = FirefoxService(executable_path= get_resource_path("geckodriver.exe"))
         webdriver_service.creation_flags = subprocess.CREATE_NO_WINDOW 
         driver = webdriver.Firefox(service=webdriver_service, options=options)
     elif os.name == 'posix':
@@ -112,7 +121,7 @@ def crawUnisat():
         return dataResponse
     try:
         driver.get("https://fractal.unisat.io/explorer/block/ef9dc9d5ba31f410d67f1be2f6419c21cbfe17746b4bca08b283fd412eb26485")
-        time.sleep(0.5)
+        time.sleep(1)
         element= driver.find_elements(By.CLASS_NAME, 'not-confirmed-block-div-right-confirmed')
         firstBlock = element[0]
         firstBlockName1 =  firstBlock.find_element(By.CLASS_NAME, 'font12').text
