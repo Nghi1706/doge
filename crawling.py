@@ -13,8 +13,6 @@ import time
 import subprocess
 import os
 import sys
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
 
 
 
@@ -31,7 +29,7 @@ def chooseSeleniumOs():
      # setup firefox site
     options = Options()
     options.add_argument('--private')
-    # options.add_argument('--headless')
+    options.add_argument('--headless')
     if os.name == 'nt':
         # driver = webdriver.Firefox(executable_path=r'./geckodriver.exe', options=options)
         webdriver_service = FirefoxService(executable_path= get_resource_path("geckodriver.exe"))
@@ -69,11 +67,18 @@ def crawlFractalbitcoin():
         dataResponse['response'] = f"Error crawlFractalbitcoin {e}"
         pass
     return dataResponse
-def crawlDogeChainRequest():
+def crawlDogeChain():
+    cookies = {
+        'cf_clearance' : 'HbmdbtQ4zwUJVCHb0wBqUSQp_I0qr8buNe.VaHdYHKA-1739721792-1.2.1.1-ErO7c8vDNfSRi5sM.LkHCi_fTArUdzpKRcHtPgq5Z.IuNVJ2RX.bMKPTXeHzuRQ1OMlSf6G2ERfKJ6Xpcb49CUoi1HPPAqmQZkv1FmdzEETzSNw7rkPKLWMo7.c0tc5w1VrSRThKl23KfoqGxP3I2zyqnzzfrG9s3IryHyBV7PJZbskbtYA_hDmQus6hEWchfqfPOfh7qZwhw.npaGlRTJkxQhAAsTR9w1fbb9AX.jRrT4fc8f.YmcQ7Yzpyagf4cDWNMo.aJO4lmTulsiODApTYYs5msiA56.WlSgxsS.KLZ_EWmPO1tNDde4bm.kp80rtXMuEJK.5CgBim6_1sEg',
+        }
+    header = {
+        'User-Agent' : 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Mobile Safari/537.36',
+    }
     dataResponse = {'status' : True, 'response' : []}
     try:
         dt = datetime.now(timezone.utc).replace(tzinfo=None)
-        reschain = requests.get('https://dogechain.info/')
+        reschain = requests.get('https://dogechain.info/', cookies=cookies, headers=header)
+        print(reschain.status_code)
         html_content = reschain.text
         soup = BeautifulSoup(html_content, "html.parser")
         difficulty_DogeChain = int(soup.find('h3',{'id':'block_difficulty'}).get_text().replace(',','')[0:4])
@@ -92,40 +97,6 @@ def crawlDogeChainRequest():
         pass
     return dataResponse
 
-def get_shadow_root(driver, element):
-    return driver.execute_script('return arguments[0].shadowRoot', element)
-def crawlDogeChain():
-    dataResponse = {'status' : True, 'response' : []}
-    try : 
-        driver = chooseSeleniumOs()
-    except Exception as e:
-        dataResponse['status'] = False
-        dataResponse['response'] = f"Error create Selenium {e}"
-        return dataResponse
-    try:
-        driver.get("https://dogechain.info/")
-        try:
-            time.sleep(5)
-            # element = driver.execute_script("return arguments[0].shadowRoot", driver.find_element(By.CLASS_NAME , 'cb-lb-t'))
-            # print(element)
-            shadown_element = driver.find_element(By.CLASS_NAME, 'shadow-root (closed)')
-            elements = driver.execute_script("return arguments[0].shadowRoot", shadown_element)
-            print(elements)
-        except Exception as e:
-            print(e)
-            pass
-        element= driver.find_element(By.ID, 'block_difficulty')
-        difficulty_DogeChain = element.text
-        dataResponse['response'] = difficulty_DogeChain
-        element.clear()
-    except Exception as e:
-        dataResponse['status'] = False
-        dataResponse['response'] = f"Error crawlDogeChain {e}"
-        pass
-    driver.delete_all_cookies()
-    # driver.close()
-    driver.quit()
-    return dataResponse
 
 def crawWhattomine():
     dataResponse = {'status' : True, 'response' : []}
