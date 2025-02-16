@@ -5,6 +5,8 @@ from tkinter import Label, Entry, Button
 from playsound import playsound
 from crawling import crawlDogeChain,crawlDogeMing, crawWhattomine, crawWhattomineCal, crawUnisat, crawlFractalbitcoin
 import multiprocessing
+from functools import partial
+
 
 class DogecoinApp(tk.Tk):
     def __init__(self):
@@ -12,10 +14,12 @@ class DogecoinApp(tk.Tk):
 
         # config main windown
         self.title("Dogecoin Mining Tracker")
-        self.geometry("650x400")
+        self.geometry("650x500")
         self.config(background="gray20")
 
         # Data Variables
+        self.inputUserDogeChain = tk.StringVar()
+        self.inputCookieDogeChain = tk.StringVar()
         self.inputDogeMin = tk.DoubleVar(self)
         self.inputDogeMax = tk.DoubleVar(self)
         self.inputDogeCurrent = tk.DoubleVar(self)
@@ -44,7 +48,9 @@ class DogecoinApp(tk.Tk):
         self.create_cost_doge_section()
         self.create_unisat_section()
         self.create_BlockDoge_info_section()
+        self.create_input_user_password()
         self.checkDissableButton()
+        
 
     def checkDissableButton(self):
         if self.fratabitcoin == 0:
@@ -125,11 +131,22 @@ class DogecoinApp(tk.Tk):
         self.blockDoge_data_labels = [Label(self, text="checking", fg="white", background="gray20") for _ in headers]
         for i, lbl in enumerate(self.blockDoge_data_labels):
             lbl.grid(row=10, column=i, padx=10, pady=5)
+    def create_input_user_password(self):
+        header = ['user', 'cookies']
+        for i, h in enumerate(header):
+            Label(self, text=h, fg="yellow", background="gray20").grid(row= 11+i, column=0, padx=10, pady=5)
+        self.needtoupdateUAC = Label(self, text='Cập nhật user - cookie', fg="yellow", background="gray20")
+        self.needtoupdateUAC.grid(row= 11, column=2, padx=10, pady=5)
+        inputUser_entry = Entry(self, width = 10, textvariable=self.inputUserDogeChain, fg='yellow', background='gray20')
+        inputPassword_entry = Entry(self, width = 10, textvariable= self.inputCookieDogeChain, fg='yellow', background='gray20')
+        inputUser_entry.grid(row = 11, column= 1,padx=10, pady=5)
+        inputPassword_entry.grid(row = 12, column= 1,padx=10, pady=5)
+
 
     @staticmethod
-    def sendRequestProcess(crawf):
+    def sendRequestProcess(crawf  , user_cookies):
         if crawf == 'dogechain':
-            result = crawlDogeChain()
+            result = crawlDogeChain(user_cookies)
         elif crawf == 'dogeming':
             result = crawlDogeMing()
         elif crawf == 'unisat':
@@ -176,6 +193,7 @@ class DogecoinApp(tk.Tk):
                     self.dataResponse['dogeming']['response'][2] = 'Sai Khối'
                 self.updateUIPprofitAndCostCoin()
                 self.updateBlockDogeInfo()
+                self.updateUIUAC('')
                 try:
                     self.playSoundChecking(self.profitability_bf, self.dataResponse['dogeming']['response'][0])
                     # set profit before  = profit current 
@@ -186,6 +204,7 @@ class DogecoinApp(tk.Tk):
             # write log error to control
             else:
                 if not self.dataResponse['dogechain']['status']:
+                    self.updateUIUAC('Cập nhật user - cookie' )
                     self.writeLogError(self.dataResponse['dogechain']['response'])
                 if not self.dataResponse['dogeming']['status']:
                     self.writeLogError(self.dataResponse['dogeming']['response'])
@@ -219,6 +238,10 @@ class DogecoinApp(tk.Tk):
         self.update_idletasks()
 
 
+
+    # update notification input user cookies
+    def updateUIUAC(self, text):
+        self.needtoupdateUAC['text'] = text
     # update UI Profit and Cost of Coin Playsound
     def updateUIPprofitAndCostCoin(self):
         labels = self.profitability_data_labels 
@@ -259,7 +282,7 @@ class DogecoinApp(tk.Tk):
     def periodically_called(self):
         """Periodically refreshes data."""
         try:
-            self.pool.map_async(self.sendRequestProcess, self.functionCrawling,callback=self.processResult)
+            self.pool.map_async(partial(self.sendRequestProcess, user_cookies=[self.inputUserDogeChain.get(), self.inputCookieDogeChain.get()]) , self.functionCrawling,callback=self.processResult)
             pass
         except Exception as e:
             self.writeLogError(e)
@@ -299,6 +322,7 @@ class DogecoinApp(tk.Tk):
             widget.destroy()  # Remove all widgets
         self.create_widgets()
 if __name__ == "__main__":
+
     multiprocessing.freeze_support()
     app = DogecoinApp()
     app.mainloop()

@@ -67,18 +67,18 @@ def crawlFractalbitcoin():
         dataResponse['response'] = f"Error crawlFractalbitcoin {e}"
         pass
     return dataResponse
-def crawlDogeChain():
+def crawlDogeChain(user_cookies):
     cookies = {
-        'cf_clearance' : 'HbmdbtQ4zwUJVCHb0wBqUSQp_I0qr8buNe.VaHdYHKA-1739721792-1.2.1.1-ErO7c8vDNfSRi5sM.LkHCi_fTArUdzpKRcHtPgq5Z.IuNVJ2RX.bMKPTXeHzuRQ1OMlSf6G2ERfKJ6Xpcb49CUoi1HPPAqmQZkv1FmdzEETzSNw7rkPKLWMo7.c0tc5w1VrSRThKl23KfoqGxP3I2zyqnzzfrG9s3IryHyBV7PJZbskbtYA_hDmQus6hEWchfqfPOfh7qZwhw.npaGlRTJkxQhAAsTR9w1fbb9AX.jRrT4fc8f.YmcQ7Yzpyagf4cDWNMo.aJO4lmTulsiODApTYYs5msiA56.WlSgxsS.KLZ_EWmPO1tNDde4bm.kp80rtXMuEJK.5CgBim6_1sEg',
+        'cf_clearance' : str(user_cookies[1]),
         }
     header = {
-        'User-Agent' : 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Mobile Safari/537.36',
+        'User-Agent' : str(user_cookies[0]).replace('\n', ' '),
     }
+    
     dataResponse = {'status' : True, 'response' : []}
     try:
         dt = datetime.now(timezone.utc).replace(tzinfo=None)
         reschain = requests.get('https://dogechain.info/', cookies=cookies, headers=header)
-        print(reschain.status_code)
         html_content = reschain.text
         soup = BeautifulSoup(html_content, "html.parser")
         difficulty_DogeChain = int(soup.find('h3',{'id':'block_difficulty'}).get_text().replace(',','')[0:4])
@@ -172,7 +172,7 @@ def crawWhattomineCal(miningDiff, fee):
     driver.delete_all_cookies()
     driver.quit()
     return dataResponse
-print(crawlDogeChain())
+# print(crawlDogeChain())
 # print(crawlDogeMing())
 # print(crawWhattomine())
 # print(crawUnisat())
