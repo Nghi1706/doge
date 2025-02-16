@@ -282,7 +282,8 @@ class DogecoinApp(tk.Tk):
     def periodically_called(self):
         """Periodically refreshes data."""
         try:
-            self.pool.map_async(partial(self.sendRequestProcess, user_cookies=[self.inputUserDogeChain.get(), self.inputCookieDogeChain.get()]) , self.functionCrawling,callback=self.processResult)
+            if self.inputUserDogeChain.get() != '' and self.inputCookieDogeChain.get() != '':
+                self.pool.map_async(partial(self.sendRequestProcess, user_cookies=[self.inputUserDogeChain.get(), self.inputCookieDogeChain.get()]) , self.functionCrawling,callback=self.processResult)
             pass
         except Exception as e:
             self.writeLogError(e)
