@@ -13,6 +13,10 @@ import time
 import subprocess
 import os
 import sys
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
+
 
 def get_resource_path(filename):
         # if run with file .app get this path
@@ -27,7 +31,7 @@ def chooseSeleniumOs():
      # setup firefox site
     options = Options()
     options.add_argument('--private')
-    options.add_argument('--headless')
+    # options.add_argument('--headless')
     if os.name == 'nt':
         # driver = webdriver.Firefox(executable_path=r'./geckodriver.exe', options=options)
         webdriver_service = FirefoxService(executable_path= get_resource_path("geckodriver.exe"))
@@ -65,7 +69,7 @@ def crawlFractalbitcoin():
         dataResponse['response'] = f"Error crawlFractalbitcoin {e}"
         pass
     return dataResponse
-def crawlDogeChain():
+def crawlDogeChainRequest():
     dataResponse = {'status' : True, 'response' : []}
     try:
         dt = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -88,6 +92,41 @@ def crawlDogeChain():
         pass
     return dataResponse
 
+def get_shadow_root(driver, element):
+    return driver.execute_script('return arguments[0].shadowRoot', element)
+def crawlDogeChain():
+    dataResponse = {'status' : True, 'response' : []}
+    try : 
+        driver = chooseSeleniumOs()
+    except Exception as e:
+        dataResponse['status'] = False
+        dataResponse['response'] = f"Error create Selenium {e}"
+        return dataResponse
+    try:
+        driver.get("https://dogechain.info/")
+        try:
+            time.sleep(5)
+            # element = driver.execute_script("return arguments[0].shadowRoot", driver.find_element(By.CLASS_NAME , 'cb-lb-t'))
+            # print(element)
+            shadown_element = driver.find_element(By.CLASS_NAME, 'shadow-root (closed)')
+            elements = driver.execute_script("return arguments[0].shadowRoot", shadown_element)
+            print(elements)
+        except Exception as e:
+            print(e)
+            pass
+        element= driver.find_element(By.ID, 'block_difficulty')
+        difficulty_DogeChain = element.text
+        dataResponse['response'] = difficulty_DogeChain
+        element.clear()
+    except Exception as e:
+        dataResponse['status'] = False
+        dataResponse['response'] = f"Error crawlDogeChain {e}"
+        pass
+    driver.delete_all_cookies()
+    # driver.close()
+    driver.quit()
+    return dataResponse
+
 def crawWhattomine():
     dataResponse = {'status' : True, 'response' : []}
     try : 
@@ -101,11 +140,11 @@ def crawWhattomine():
         element= driver.find_elements(By.CLASS_NAME, 'font-monospace')
         rev_BTCperDay = element[8].text
         dataResponse['response'] = rev_BTCperDay
+        element.clear()
     except Exception as e:
         dataResponse['status'] = False
         dataResponse['response'] = f"Error CrawlWhattomine {e}"
         pass
-    element.clear()
     driver.delete_all_cookies()
     # driver.close()
     driver.quit()
@@ -130,11 +169,11 @@ def crawUnisat():
         firstBlockTransaction = firstBlock.find_element(By.CLASS_NAME, 'font10').text
         firstBlockTime = firstBlock.find_element(By.CLASS_NAME, 'font11').text 
         dataResponse['response'] = [firstBlockName1, firstBlockName2, firstBlockName3, firstBlockTransaction, firstBlockTime]
+        element.clear()
     except Exception as e:
         dataResponse['status'] = False
         dataResponse['response'] = f"Error crawUnisat {e}"
         pass
-    element.clear()
     driver.delete_all_cookies()
     # driver.close()
     driver.quit()
@@ -154,15 +193,15 @@ def crawWhattomineCal(miningDiff, fee):
         element= driver.find_elements(By.CLASS_NAME, 'font-monospace')
         rev_BTCperDaywFee = element[8].text
         dataResponse['response'] = rev_BTCperDaywFee
+        element.clear()
     except Exception as e:
         dataResponse['status'] = False
         dataResponse['response'] = f"Error CrawlWhattomine {e}"
         pass
-    element.clear()
     driver.delete_all_cookies()
     driver.quit()
     return dataResponse
-# print(crawlDogeChain())
+print(crawlDogeChain())
 # print(crawlDogeMing())
 # print(crawWhattomine())
 # print(crawUnisat())

@@ -48,9 +48,9 @@ class DogecoinApp(tk.Tk):
 
     def checkDissableButton(self):
         if self.fratabitcoin == 0:
-            self.buttonCal['state'] = tk.DISABLED
+            self.buttonCal['state'] = 'disable'
         else:
-            self.buttonCal['state'] = tk.NORMAL
+            self.buttonCal['state'] = 'normal'
 
     def create_profitability_section(self):
         """Creates UI elements for profitability details."""
@@ -146,7 +146,7 @@ class DogecoinApp(tk.Tk):
         return result
 
     def buttonCalClicked(self):
-        self.buttonCal['state'] = tk.DISABLED
+        self.buttonCal['state'] = 'disable'
         try:
             self.pool.apply_async(self.background_task,args=(self.fratabitcoin, float(self.inputFees.get())), callback=self.process_result)
 
@@ -158,13 +158,13 @@ class DogecoinApp(tk.Tk):
     def process_result(self, result):
         self.dataWhattomineCal = result
         if self.dataWhattomineCal['status']:
-            self.buttonCal['state'] = tk.DISABLED
+            self.buttonCal['state'] = 'disable'
             self.updateWhattomineCal()
             self.update()
             self.update_idletasks()
         else :
             self.writeLogError(self.dataWhattomineCal['response'])
-        self.buttonCal['state'] = tk.NORMAL 
+        self.buttonCal['state'] = 'normal'
     def processResult(self, results):
         self.dataResponse.update(dict(zip(self.functionCrawling, results)))
         # print(self.dataResponse)
@@ -213,7 +213,7 @@ class DogecoinApp(tk.Tk):
             self.writeLogError(e)
             pass
         if self.firstTimeLoad :
-            self.buttonCal['state'] = tk.NORMAL
+            self.buttonCal['state'] = 'normal'
             self.firstTimeLoad = False
         self.update()
         self.update_idletasks()
