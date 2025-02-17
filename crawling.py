@@ -72,7 +72,7 @@ def crawlDogeChain(user_cookies):
         'cf_clearance' : str(user_cookies[1]),
         }
     header = {
-        'User-Agent' : str(user_cookies[0]).replace('\n', ' '),
+        'User-Agent' : str(user_cookies[0]).replace('\n', ''),
     }
     
     dataResponse = {'status' : True, 'response' : []}
