@@ -160,7 +160,8 @@ def crawWhattomineCal(miningDiff, fee):
         return dataResponse
     try:
         miningDiff = float(miningDiff) * 10000000
-        driver.get(f"https://whattomine.com/coins/431-fb-sha-256?hr=1000.0&d_enabled=true&d={str(float(miningDiff))}&fee={str(float(fee))}")
+        # driver.get(f"https://whattomine.com/coins/431-fb-sha-256?hr=1000.0&d_enabled=true&d={str(float(miningDiff))}&fee={str(float(fee))}")
+        driver.get(f"https://whattomine.com/coins/431-fb-sha-256?hr=1000.0&d_enabled=true&d={str(float(miningDiff))}&p=0.0&fee={str(float(fee))}&cost=0.0&cost_currency=USD&hcost=0.0&span_br=&span_d=24&commit=Calculate")
         element= driver.find_elements(By.CLASS_NAME, 'font-monospace')
         rev_BTCperDaywFee = element[8].text
         dataResponse['response'] = rev_BTCperDaywFee
