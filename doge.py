@@ -199,7 +199,13 @@ class DogecoinApp(tk.Tk):
                     self.writeLogError(self.dataResponse['dogechain']['response'])
                 if not self.dataResponse['dogeming']['status']:
                     self.writeLogError(self.dataResponse['dogeming']['response'])
-                    
+             # update ui fratabitcoin
+            if self.dataResponse['fratabitcoin']['status']:
+                self.fratabitcoin = self.dataResponse['fratabitcoin']['response']
+                self.updateFraltalBitcoin()
+            # write log error to control   
+            else:
+                self.writeLogError(self.dataResponse['fratabitcoin']['response'])                
             # update ui Unisat
             if self.dataResponse['unisat']['status']:
                 self.updateUIUnisat()
@@ -212,13 +218,7 @@ class DogecoinApp(tk.Tk):
             # write log error to control
             else:
                 self.writeLogError(self.dataResponse['whattomine']['response'])
-            # update ui fratabitcoin
-            if self.dataResponse['fratabitcoin']['status']:
-                self.fratabitcoin = self.dataResponse['fratabitcoin']['response']
-                self.updateFraltalBitcoin()
-            # write log error to control
-            else:
-                self.writeLogError(self.dataResponse['fratabitcoin']['response'])
+
         except Exception as e:
             self.writeLogError(e)
             pass

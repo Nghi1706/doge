@@ -60,7 +60,7 @@ def crawlFractalbitcoin():
         dt = datetime.now(timezone.utc).replace(tzinfo=None)
         timeStamp = int(datetime.timestamp(dt))
         resMini = requests.get('https://www.mining-dutch.nl/pools/fractalbitcoin.php?page=api&action=getdashboarddata&api_key=&id=&_=' + str(timeStamp))
-        difficulty_frata = round(int(resMini.json()['getdashboarddata']['data']['network']['difficulty']) / 10000000)
+        difficulty_frata = round(float(resMini.json()['getdashboarddata']['data']['network']['difficulty']) / 10000000)
         dataResponse['response'] = difficulty_frata
     except Exception as e:
         dataResponse['status'] = False
