@@ -26,12 +26,12 @@ class DogecoinApp(tk.Tk):
         self.inputDogeCurrent = tk.DoubleVar(self)
         self.inputFees = tk.DoubleVar(self)
         self.profitability_bf = 0
-        self.dogemining = 0
+        self.fratabitcoin = 0
         self.firstTimeLoad = True
         self.pool = multiprocessing.Pool(processes=min(6, multiprocessing.cpu_count()))
-        self.dataResponse = {'dogechain': {}, 'dogeming': {}, 'whattomine' : {}} 
+        self.dataResponse = {'dogechain': {}, 'dogeming': {}, 'whattomine' : {}, 'fratabitcoin' : {}} 
         self.dataWhattomineCal = {}
-        self.functionCrawling = ['dogechain', 'dogeming', 'whattomine', 'unisat']
+        self.functionCrawling = ['dogechain', 'dogeming', 'whattomine', 'unisat', 'fratabitcoin']
         self.audio_file = self.get_resource_path('notification.mp3')
         self.log_file = self.get_resource_path('log.txt')
 
@@ -54,7 +54,7 @@ class DogecoinApp(tk.Tk):
         
 
     def checkDissableButton(self):
-        if self.dogemining == 0:
+        if self.fratabitcoin == 0:
             self.buttonCal['state'] = 'disable'
         else:
             self.buttonCal['state'] = 'normal'
@@ -71,19 +71,19 @@ class DogecoinApp(tk.Tk):
 
     def create_whattomine_section(self):
         """Creates UI elements for whattomine data."""
-        header = ['Rev.BTCperDay', 'Calculating', 'Fees', '']
+        header = ['Rev.BTCperDay', 'Calculating', 'Fees', 'Fractal Bitcoin', '']
         for i, h in enumerate(header):
             Label(self, text=h, fg="yellow", background="gray20").grid(row=2, column=i, padx=10, pady=5)
         self.rev_per_day_label = Label(self, text="checking", fg="yellow", background="gray20")
         self.rev_per_day_cal_label = Label(self, text="checking", fg="yellow", background="gray20")
         self.input_Fees = Entry(self, width=10, textvariable=self.inputFees, fg="yellow", background="gray20")
         self.buttonCal = ttk.Button(self, text="Calculate", command=self.buttonCalClicked)
-        # self.fractalbitcoin_label =  Label(self, text="checking", fg="yellow", background="gray20")
+        self.fractalbitcoin_label =  Label(self, text="checking", fg="yellow", background="gray20")
         self.rev_per_day_label.grid(row=3, column=0, padx=10, pady=5)
         self.rev_per_day_cal_label.grid(row=3, column=1, padx=10, pady=5)
         self.input_Fees.grid(row=3, column=2, padx=10, pady=5)
-        # self.fractalbitcoin_label.grid(row=3, column=3, padx=10, pady=5)
-        self.buttonCal.grid(row=3, column=3, padx=10, pady=5)
+        self.fractalbitcoin_label.grid(row=3, column=3, padx=10, pady=5)
+        self.buttonCal.grid(row=3, column=4, padx=10, pady=5)
 
     def create_cost_doge_section(self):
         # input
@@ -142,8 +142,8 @@ class DogecoinApp(tk.Tk):
             result = crawlDogeMing()
         elif crawf == 'unisat':
             result = crawUnisat()
-        # elif crawf == 'fratabitcoin':
-        #     result = crawlFractalbitcoin()
+        elif crawf == 'fratabitcoin':
+            result = crawlFractalbitcoin()
         else:
             result = crawWhattomine()
         return result
@@ -156,7 +156,7 @@ class DogecoinApp(tk.Tk):
     def buttonCalClicked(self):
         self.buttonCal['state'] = 'disable'
         try:
-            self.pool.apply_async(self.background_task,args=(self.dogemining, float(self.inputFees.get())), callback=self.process_result)
+            self.pool.apply_async(self.background_task,args=(self.fratabitcoin, float(self.inputFees.get())), callback=self.process_result)
 
         except Exception as e:
             self.writeLogError(e)
@@ -180,7 +180,6 @@ class DogecoinApp(tk.Tk):
         try: 
             # update ui dogechain and dogeming
             if self.dataResponse['dogechain']['status'] and self.dataResponse['dogeming']['status']:
-                self.dogemining = self.dataResponse['dogeming']['response'][1]
                 if self.dataResponse['dogechain']['response'][0] == self.dataResponse['dogeming']['response'][1]:
                     self.dataResponse['dogeming']['response'][2] = 'Sai Khối'
                 self.updateUIPprofitAndCostCoin()
@@ -200,13 +199,13 @@ class DogecoinApp(tk.Tk):
                     self.writeLogError(self.dataResponse['dogechain']['response'])
                 if not self.dataResponse['dogeming']['status']:
                     self.writeLogError(self.dataResponse['dogeming']['response'])
-            #  # update ui fratabitcoin
-            # if self.dataResponse['fratabitcoin']['status']:
-            #     self.fratabitcoin = self.dataResponse['fratabitcoin']['response']
-            #     self.updateFraltalBitcoin()
-            # # write log error to control   
-            # else:
-            #     self.writeLogError(self.dataResponse['fratabitcoin']['response'])                
+             # update ui fratabitcoin
+            if self.dataResponse['fratabitcoin']['status']:
+                self.fratabitcoin = self.dataResponse['fratabitcoin']['response']
+                self.updateFraltalBitcoin()
+            # write log error to control   
+            else:
+                self.writeLogError(self.dataResponse['fratabitcoin']['response'])                
             # update ui Unisat
             if self.dataResponse['unisat']['status']:
                 self.updateUIUnisat()
@@ -269,8 +268,8 @@ class DogecoinApp(tk.Tk):
     def updateWhattomineCal(self):
         self.rev_per_day_cal_label['text'] = self.dataWhattomineCal['response']
 
-    # def updateFraltalBitcoin(self):
-    #     self.fractalbitcoin_label['text'] = self.dataResponse['fratabitcoin']['response']
+    def updateFraltalBitcoin(self):
+        self.fractalbitcoin_label['text'] = self.dataResponse['fratabitcoin']['response']
     def periodically_called(self):
         """Periodically refreshes data."""
         try:
