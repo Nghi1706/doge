@@ -141,11 +141,8 @@ class DogecoinCalculator {
         // Send message to background script
         try {
             const response = await chrome.runtime.sendMessage({ action: 'start' });
-            if (response && response.success) {
-                console.log('Background service started successfully');
-            }
         } catch (error) {
-            console.error('Error starting background service:', error);
+            alert('Error starting background service: ' + error.message);
         }
     }
     
@@ -160,11 +157,9 @@ class DogecoinCalculator {
         // Send message to background script
         try {
             const response = await chrome.runtime.sendMessage({ action: 'stop' });
-            if (response && response.success) {
-                console.log('Background service stopped successfully');
-            }
+      
         } catch (error) {
-            console.error('Error stopping background service:', error);
+            alert('Error stopping background service: ' + error.message);
         }
     }
     
@@ -174,7 +169,6 @@ class DogecoinCalculator {
                 url: 'https://www.mining-dutch.nl/pools/dogecoin.php?page=dashboard#'
             });
         } catch (error) {
-            console.error('Error opening target page:', error);
             alert('Lỗi khi mở trang: ' + error.message);
         }
     }
@@ -219,7 +213,12 @@ class DogecoinCalculator {
                         alert(`Giá không hợp lệ: ${priceText}`);
                     }
                 } else {
-                    alert('Không tìm thấy element với id="b-price". Vui lòng kiểm tra trang web.');
+                     const openTab = confirm('Không tìm thấy profit. Bạn có muốn mở tab mới không?');
+                    if (openTab) {
+                        chrome.tabs.create({
+                            url: 'https://www.mining-dutch.nl/pools/dogecoin.php?page=dashboard#'
+                        });
+                    }
                 }
             } else {
                 // Try to find any mining-dutch.nl tab
@@ -265,10 +264,10 @@ class DogecoinCalculator {
             if (index === 0) row.classList.add('latest-record');
             
             row.innerHTML = `
-                <td>${parseFloat(record.input1 || 0).toFixed(6)}</td>
-                <td>${parseFloat(record.input2 || 0).toFixed(6)}</td>
-                <td>${parseFloat(record.input3 || 0).toFixed(6)}</td>
-                <td>${parseFloat(record.profit || 0).toFixed(0)}</td>
+                <td>${parseFloat(record.input1 || 0).toFixed(2)}</td>
+                <td>${parseFloat(record.input2 || 0).toFixed(2)}</td>
+                <td>${parseFloat(record.input3 || 0).toFixed(2)}</td>
+                <td>${parseFloat(record.profit || 0).toFixed(2)}</td>
                 <td class="${record.cal >= 0 ? 'positive' : 'negative'}">${parseFloat(record.cal || 0).toFixed(2)}%</td>
                 <td>${record.time}</td>
             `;

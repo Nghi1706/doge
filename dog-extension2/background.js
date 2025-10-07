@@ -32,7 +32,6 @@ class BackgroundService {
         // Listen for alarm events - this is the ONLY way to handle periodic tasks in Manifest V3
         chrome.alarms.onAlarm.addListener(async (alarm) => {
             if (alarm.name === 'priceMonitoring') {
-                console.log('Price monitoring alarm triggered');
                 await this.fetchPriceFromTargetPage();
             }
         });
@@ -43,10 +42,13 @@ class BackgroundService {
             const result = await chrome.storage.local.get(['isRunning']);
             this.isRunning = result.isRunning || false;
             
+            // if is running, start monitoring
             if (this.isRunning) {
                 console.log('Restoring background service from saved state');
                 this.startPriceMonitoring();
             }
+            // Todo: check not running restart alarm?
+            else {}
         } catch (error) {
             console.error('Error loading state:', error);
         }
@@ -58,22 +60,16 @@ class BackgroundService {
         this.isRunning = true;
         await chrome.storage.local.set({ isRunning: true });
         this.startPriceMonitoring();
-        
-        console.log('Background service started');
     }
     
     async stop() {
         if (!this.isRunning) return;
-        
         this.isRunning = false;
         await chrome.storage.local.set({ isRunning: false });
         this.stopPriceMonitoring();
-        
-        console.log('Background service stopped');
     }
     
     startPriceMonitoring() {
-        // Clear any existing alarm
         chrome.alarms.clear('priceMonitoring');
         
         // Create alarm to fetch price every 1 minute
@@ -84,13 +80,10 @@ class BackgroundService {
         
         // Fetch immediately
         this.fetchPriceFromTargetPage();
-        
-        console.log('Price monitoring alarm created - will fetch every 1 minute');
     }
     
     stopPriceMonitoring() {
         chrome.alarms.clear('priceMonitoring');
-        console.log('Price monitoring alarm cleared');
     }
     
     async fetchPriceFromTargetPage() {
@@ -99,13 +92,13 @@ class BackgroundService {
             const tabs = await chrome.tabs.query({
                 url: "https://www.mining-dutch.nl/pools/dogecoin.php*"
             });
-            
+
+            // lấy tab đầu tiên khớp => tab mở là tab đầu của trình duyệt
             if (tabs.length > 0) {
                 const tab = tabs[0];
                 
                 // Check if tab is active and ready
                 if (tab.status !== 'complete') {
-                    console.log('Target tab is not ready yet');
                     return;
                 }
                 
@@ -127,7 +120,7 @@ class BackgroundService {
                         const price = parseFloat(priceText.replace(/[^\d.-]/g, ''));
                         
                         if (!isNaN(price)) {
-                            const profit = price * 100000000; // Multiply by 100 million
+                            const profit = price * 100000000;
                             
                             // Store the price and collect data
                             await chrome.storage.local.set({ 
@@ -138,29 +131,20 @@ class BackgroundService {
                             // Collect data with profit calculation
                             await this.collectData(profit);
                             
-                            console.log('Price updated:', profit);
-                        } else {
-                            console.log('Invalid price format:', priceText);
+                        } 
+                        // todo: handle price parse error
+                        else {
                         }
-                    } else {
-                        console.log('Price element not found on page');
+                    } 
+                    // todo: handle element not found
+                    else {
                     }
                 } catch (scriptError) {
                     console.log('Script execution failed:', scriptError.message);
                 }
             } else {
-                console.log('Target tab not found. Please open: https://www.mining-dutch.nl/pools/dogecoin.php?page=dashboard#');
                 
-                // Try to find any tab with mining-dutch.nl
-                const allTabs = await chrome.tabs.query({
-                    url: "https://www.mining-dutch.nl/*"
-                });
-                
-                if (allTabs.length > 0) {
-                    console.log('Found mining-dutch.nl tab, but URL might be different');
-                } else {
-                    console.log('No mining-dutch.nl tabs found');
-                }
+                alert('Vui lòng mở trang https://www.mining-dutch.nl/pools/dogecoin.php?page=dashboard# để tiện theo dõi giá Dogecoin');
             }
         } catch (error) {
             console.error('Error fetching price:', error);
@@ -170,13 +154,13 @@ class BackgroundService {
     async collectData(profit) {
         try {
             const result = await chrome.storage.local.get(['input1', 'input2', 'input3', 'dataRecords']);
-            const input1 = parseFloat(result.input1) || 0;
-            const input2 = parseFloat(result.input2) || 0;
-            const input3 = parseFloat(result.input3) || 1;
-            
+            const input1 = parseFloat(result.input1).toFixed(2) || 0;
+            const input2 = parseFloat(result.input2).toFixed(2) || 0;
+            const input3 = parseFloat(result.input3).toFixed(2) || 1;
+
             // Skip data collection if inputs are not set
-            if (input1 === 0 || input2 === 0 || input3 === 0) {
-                console.log('Skipping data collection - inputs not set');
+            if (input1 === 0 || input3 === 0) {
+                alert('input 1, input 3 phải khác 0 để tính toán');
                 return;
             }
             
@@ -196,9 +180,9 @@ class BackgroundService {
             const dataRecords = result.dataRecords || [];
             dataRecords.unshift(record); // Add to beginning
 
-            // Keep only last 10000 records
-            if (dataRecords.length > 10000) {
-                dataRecords.splice(10000);
+            // Keep only last 3000 records 3000 / 60 = 50 hours of data
+            if (dataRecords.length > 3000) {
+                dataRecords.splice(3000);
             }
 
             await chrome.storage.local.set({ 
@@ -207,15 +191,11 @@ class BackgroundService {
                 lastUpdate: now.toLocaleString('vi-VN')
             });
 
-            console.log('Data collected:', record);
         } catch (error) {
-            console.error('Error collecting data:', error);
+            alert('LỖI KHI TÍNH TOÁN');
         }
     }
 }
 
 // Initialize background service
 const backgroundService = new BackgroundService();
-
-// Log service worker startup
-console.log('Background service worker started - Manifest V3 optimized with chrome.alarms');
