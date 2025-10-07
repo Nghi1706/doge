@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Background Service</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        button { padding: 10px 20px; margin: 10px; font-size: 16px; }
+        .status { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .running { background-color: #d4edda; border-color: #c3e6cb; }
+        .stopped { background-color: #f8d7da; border-color: #f5c6cb; }
+        .error { background-color: #fff3cd; border-color: #ffeaa7; }
+        .warning { background-color: #d1ecf1; border-color: #bee5eb; }
+    </style>
+</head>
+<body>
+    <h1>Test Background Service</h1>
+    
+    <div id="extensionCheck" class="status warning">
+        🔍 Checking extension context...
+    </div>
+    
+    <div>
+        <button id="startBtn">Start Background Service</button>
+        <button id="stopBtn">Stop Background Service</button>
+        <button id="statusBtn">Check Status</button>
+        <button id="clearAlarmsBtn">Clear Alarms</button>
+    </div>
+    
+    <div id="status" class="status stopped">
+        Status: Unknown
+    </div>
+    
+    <div id="logs" style="margin-top: 20px;">
+        <h3>Logs:</h3>
+        <div id="logContent" style="background: #f8f9fa; padding: 10px; height: 300px; overflow-y: auto; border: 1px solid #ccc;"></div>
+    </div>
+
+    <!-- External script file instead of inline script -->
+    <script src="test-background.js"></script>
+</body>
+</html>

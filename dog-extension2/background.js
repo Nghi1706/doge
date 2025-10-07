@@ -1,12 +1,13 @@
-// Background script for Dogecoin Profit Calculator
+// Background script for Dogecoin Profit Calculator - Manifest V3 Optimized
 class BackgroundService {
     constructor() {
         this.isRunning = false;
-        this.priceInterval = null;
         this.setupMessageListener();
+        this.setupAlarmListener();
         this.loadState();
     }
-    
+
+    // message listener
     setupMessageListener() {
         chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             switch (request.action) {
@@ -27,12 +28,23 @@ class BackgroundService {
         });
     }
     
+    setupAlarmListener() {
+        // Listen for alarm events - this is the ONLY way to handle periodic tasks in Manifest V3
+        chrome.alarms.onAlarm.addListener(async (alarm) => {
+            if (alarm.name === 'priceMonitoring') {
+                console.log('Price monitoring alarm triggered');
+                await this.fetchPriceFromTargetPage();
+            }
+        });
+    }
+    
     async loadState() {
         try {
             const result = await chrome.storage.local.get(['isRunning']);
             this.isRunning = result.isRunning || false;
             
             if (this.isRunning) {
+                console.log('Restoring background service from saved state');
                 this.startPriceMonitoring();
             }
         } catch (error) {
@@ -61,19 +73,24 @@ class BackgroundService {
     }
     
     startPriceMonitoring() {
-        this.priceInterval = setInterval(async () => {
-            await this.fetchPriceFromTargetPage();
-        }, 60000); // Every 60 seconds
+        // Clear any existing alarm
+        chrome.alarms.clear('priceMonitoring');
+        
+        // Create alarm to fetch price every 1 minute
+        chrome.alarms.create('priceMonitoring', { 
+            delayInMinutes: 1, 
+            periodInMinutes: 1 
+        });
         
         // Fetch immediately
         this.fetchPriceFromTargetPage();
+        
+        console.log('Price monitoring alarm created - will fetch every 1 minute');
     }
     
     stopPriceMonitoring() {
-        if (this.priceInterval) {
-            clearInterval(this.priceInterval);
-            this.priceInterval = null;
-        }
+        chrome.alarms.clear('priceMonitoring');
+        console.log('Price monitoring alarm cleared');
     }
     
     async fetchPriceFromTargetPage() {
@@ -153,9 +170,15 @@ class BackgroundService {
     async collectData(profit) {
         try {
             const result = await chrome.storage.local.get(['input1', 'input2', 'input3', 'dataRecords']);
-            const input1 = result.input1 || 0;
-            const input2 = result.input2 || 0;
-            const input3 = result.input3 || 1;
+            const input1 = parseFloat(result.input1) || 0;
+            const input2 = parseFloat(result.input2) || 0;
+            const input3 = parseFloat(result.input3) || 1;
+            
+            // Skip data collection if inputs are not set
+            if (input1 === 0 || input2 === 0 || input3 === 0) {
+                console.log('Skipping data collection - inputs not set');
+                return;
+            }
             
             const cal = ((((profit * input1 + input2) / input3) - 0.04) - 1) * 100;
             
@@ -193,3 +216,6 @@ class BackgroundService {
 
 // Initialize background service
 const backgroundService = new BackgroundService();
+
+// Log service worker startup
+console.log('Background service worker started - Manifest V3 optimized with chrome.alarms');

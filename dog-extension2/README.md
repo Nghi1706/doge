@@ -8,10 +8,11 @@ Chrome extension để tính toán profit từ giá Dogecoin tự động với 
 - **Tính toán profit**: Profit = giá * 100,000,000
 - **Công thức tính Cal**: `((((profit * input1 + input2) / input3) - 0.04) - 1) * 100`
 - **Giao diện đẹp**: UI hiện đại với gradient và animation
-- **Lưu trữ dữ liệu**: Tự động lưu tất cả records
-- **Xuất CSV**: Xuất dữ liệu theo khoảng thời gian
+- **Lưu trữ dữ liệu**: Tự động lưu tất cả records (tối đa 10,000)
+- **Xuất CSV/Excel**: Xuất dữ liệu theo khoảng thời gian
 - **Điều khiển**: Start/Stop/Test với status indicator
-- **Background service**: Chạy ngầm với tab cụ thể
+- **Background service**: Chạy ngầm với Manifest V3 Service Worker
+- **Chrome Alarms**: Sử dụng chrome.alarms thay vì setInterval để đảm bảo hoạt động ổn định
 
 ## 🚀 Cài đặt
 
@@ -22,7 +23,6 @@ Chrome extension để tính toán profit từ giá Dogecoin tự động với 
    - `popup.html`
    - `popup.js`
    - `background.js`
-   - `content.js`
    - `icon16.png`, `icon48.png`, `icon128.png`
 
 ### Bước 2: Load extension vào Chrome
@@ -57,24 +57,24 @@ Chrome extension để tính toán profit từ giá Dogecoin tự động với 
 - **Status**: Hiển thị trạng thái Running/Stopped
 
 ### 4. Xem dữ liệu
-- Bảng hiển thị 10 records gần nhất
+- Bảng hiển thị 50 records gần nhất (có scroll khi nhiều hơn)
 - Cột: Input 1, Input 2, Input 3, Profit, Cal (%), Time
 - Dữ liệu được cập nhật mỗi 1 phút
 
 ### 5. Xuất dữ liệu
 - Chọn thời gian bắt đầu và kết thúc
-- Click "Export CSV" để tải file
-- File sẽ có tên: `dogecoin_data_YYYY-MM-DD.csv`
+- Click "Export CSV" hoặc "Export Excel" để tải file
+- File sẽ có tên: `dogecoin_profit_YYYY-MM-DD.csv/xls`
 
 ## 🔧 Cấu trúc dự án
 
 ```
 dog-extension2/
-├── manifest.json          # Manifest file
+├── manifest.json          # Manifest file (Manifest V3)
 ├── popup.html            # UI popup
 ├── popup.js              # Popup logic
-├── background.js         # Background service
-├── content.js            # Content script
+├── background.js         # Background service (Service Worker)
+├── test-background.html  # Test page for debugging
 ├── icon16.png           # Icon 16x16
 ├── icon48.png           # Icon 48x48
 ├── icon128.png          # Icon 128x128
@@ -108,9 +108,10 @@ cal = ((((profit * input1 + input2) / input3) - 0.04) - 1) * 100
 ## 📝 Lưu ý
 
 - Extension chỉ hoạt động trên URL cụ thể
-- Dữ liệu được lưu trong Chrome storage
+- Dữ liệu được lưu trong Chrome storage (tối đa 10,000 records)
 - Cần mở tab target để extension hoạt động
-- Background service chạy liên tục khi extension được bật
+- Background service sử dụng chrome.alarms để đảm bảo hoạt động ổn định
+- Service Worker sẽ tự động wake-up khi có alarm
 
 ## 🆘 Hỗ trợ
 
@@ -119,3 +120,4 @@ Nếu gặp vấn đề, hãy:
 2. Restart extension
 3. Kiểm tra quyền của extension
 4. Đảm bảo URL target đúng
+5. Sử dụng test-background.html để debug

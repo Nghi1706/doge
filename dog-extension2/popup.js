@@ -2,8 +2,6 @@
 class DogecoinCalculator {
     constructor() {
         this.isRunning = false;
-        this.priceInterval = null;
-        this.dataInterval = null;
         this.currentPrice = 0;
         this.dataRecords = [];
         
@@ -11,6 +9,7 @@ class DogecoinCalculator {
         this.loadStoredData();
         this.setupEventListeners();
         this.updateStatus();
+        this.startDataRefresh();
     }
     
     initializeElements() {
@@ -65,12 +64,57 @@ class DogecoinCalculator {
             this.updateDataTable();
             this.updateStatus();
             
-            if (this.isRunning) {
-                this.startPriceMonitoring();
-                this.startDataCollection();
-            }
+            // Check background status and sync
+            this.checkBackgroundStatus();
         } catch (error) {
             console.error('Error loading stored data:', error);
+        }
+    }
+    
+    async checkBackgroundStatus() {
+        try {
+            const response = await chrome.runtime.sendMessage({ action: 'getStatus' });
+            if (response && response.isRunning !== undefined) {
+                this.isRunning = response.isRunning;
+                this.updateStatus();
+            }
+        } catch (error) {
+            console.error('Error checking background status:', error);
+        }
+    }
+    
+    // Start data refresh to sync with background
+    startDataRefresh() {
+        setInterval(async () => {
+            await this.refreshData();
+        }, 5000); // Refresh every 5 seconds
+    }
+    
+    async refreshData() {
+        try {
+            const result = await chrome.storage.local.get([
+                'currentPrice', 'dataRecords', 'lastPriceUpdate', 'isRunning'
+            ]);
+            
+            // Update price if changed
+            if (result.currentPrice !== this.currentPrice) {
+                this.currentPrice = result.currentPrice || 0;
+                this.updatePriceDisplay();
+            }
+            
+            // Update data records if changed
+            if (JSON.stringify(result.dataRecords) !== JSON.stringify(this.dataRecords)) {
+                this.dataRecords = result.dataRecords || [];
+                this.updateDataTable();
+            }
+            
+            // Update running status if changed
+            if (result.isRunning !== this.isRunning) {
+                this.isRunning = result.isRunning || false;
+                this.updateStatus();
+            }
+        } catch (error) {
+            console.error('Error refreshing data:', error);
         }
     }
     
@@ -92,12 +136,17 @@ class DogecoinCalculator {
         this.isRunning = true;
         await chrome.storage.local.set({ isRunning: true });
         
-        this.startPriceMonitoring();
-        this.startDataCollection();
         this.updateStatus();
         
         // Send message to background script
-        chrome.runtime.sendMessage({ action: 'start' });
+        try {
+            const response = await chrome.runtime.sendMessage({ action: 'start' });
+            if (response && response.success) {
+                console.log('Background service started successfully');
+            }
+        } catch (error) {
+            console.error('Error starting background service:', error);
+        }
     }
     
     async stop() {
@@ -106,12 +155,17 @@ class DogecoinCalculator {
         this.isRunning = false;
         await chrome.storage.local.set({ isRunning: false });
         
-        this.stopPriceMonitoring();
-        this.stopDataCollection();
         this.updateStatus();
         
         // Send message to background script
-        chrome.runtime.sendMessage({ action: 'stop' });
+        try {
+            const response = await chrome.runtime.sendMessage({ action: 'stop' });
+            if (response && response.success) {
+                console.log('Background service stopped successfully');
+            }
+        } catch (error) {
+            console.error('Error stopping background service:', error);
+        }
     }
     
     async openTargetPage() {
@@ -156,7 +210,10 @@ class DogecoinCalculator {
                     if (!isNaN(price)) {
                         this.currentPrice = price * 100000000; // Multiply by 100 million
                         this.updatePriceDisplay();
-                        await chrome.storage.local.set({ currentPrice: this.currentPrice });
+                        await chrome.storage.local.set({ 
+                            currentPrice: this.currentPrice,
+                            lastPriceUpdate: new Date().toISOString()
+                        });
                         alert(`Test thành công! Giá hiện tại: ${this.currentPrice.toFixed(8)}`);
                     } else {
                         alert(`Giá không hợp lệ: ${priceText}`);
@@ -192,116 +249,6 @@ class DogecoinCalculator {
         }
     }
     
-    startPriceMonitoring() {
-        this.priceInterval = setInterval(async () => {
-            await this.fetchPrice();
-        }, 60000); // Every 60 seconds
-        
-        // Fetch immediately
-        this.fetchPrice();
-    }
-    
-    stopPriceMonitoring() {
-        if (this.priceInterval) {
-            clearInterval(this.priceInterval);
-            this.priceInterval = null;
-        }
-    }
-    
-    startDataCollection() {
-        this.dataInterval = setInterval(() => {
-            this.collectData();
-        }, 60000); // Every 1 minute
-        
-        // Collect immediately
-        this.collectData();
-    }
-    
-    stopDataCollection() {
-        if (this.dataInterval) {
-            clearInterval(this.dataInterval);
-            this.dataInterval = null;
-        }
-    }
-    
-    async fetchPrice() {
-        try {
-            const tabs = await chrome.tabs.query({ 
-                url: "https://www.mining-dutch.nl/pools/dogecoin.php*" 
-            });
-            
-            if (tabs.length > 0) {
-                const tab = tabs[0];
-                
-                // Check if tab is ready
-                if (tab.status !== 'complete') {
-                    console.log('Tab not ready yet');
-                    return;
-                }
-                
-                const result = await chrome.scripting.executeScript({
-                    target: { tabId: tab.id },
-                    function: () => {
-                        const priceElement = document.getElementById('b-price');
-                        return priceElement ? priceElement.textContent : null;
-                    }
-                });
-                
-                if (result[0]?.result) {
-                    const priceText = result[0].result;
-                    const price = parseFloat(priceText.replace(/[^\d.-]/g, ''));
-                    
-                    if (!isNaN(price)) {
-                        this.currentPrice = price * 100000000; // Multiply by 100 million
-                        this.updatePriceDisplay();
-                        await chrome.storage.local.set({ currentPrice: this.currentPrice });
-                    } else {
-                        console.log('Invalid price format:', priceText);
-                    }
-                } else {
-                    console.log('Price element not found');
-                }
-            } else {
-                console.log('Target tab not found');
-            }
-        } catch (error) {
-            console.error('Error fetching price:', error);
-        }
-    }
-    
-    collectData() {
-        const input1 = parseFloat(this.input1.value) || 0;
-        const input2 = parseFloat(this.input2.value) || 0;
-        const input3 = parseFloat(this.input3.value) || 0;
-        
-        if (input1 === 0 || input2 === 0 || input3 === 0) {
-            return; // Skip if inputs are not set
-        }
-        
-        const profit = this.currentPrice;
-        const cal = ((((profit * input1 + input2) / input3) - 0.04) - 1) * 100;
-        const timestamp = new Date();
-        
-        const record = {
-            input1,
-            input2,
-            input3,
-            profit,
-            cal,
-            timestamp: timestamp.toISOString(),
-            time: timestamp.toLocaleString('vi-VN')
-        };
-        
-        this.dataRecords.unshift(record); // Add to beginning
-        
-        // Keep only last 10000 records
-        if (this.dataRecords.length > 10000) {
-            this.dataRecords.splice(10000);
-        }
-        
-        this.updateDataTable();
-        this.saveData();
-    }
     
     updatePriceDisplay() {
         this.currentPriceEl.textContent = this.currentPrice.toFixed(8);
@@ -318,11 +265,11 @@ class DogecoinCalculator {
             if (index === 0) row.classList.add('latest-record');
             
             row.innerHTML = `
-                <td>${record.input1.toFixed(6)}</td>
-                <td>${record.input2.toFixed(6)}</td>
-                <td>${record.input3.toFixed(6)}</td>
-                <td>${record.profit.toFixed(0)}</td>
-                <td class="${record.cal >= 0 ? 'positive' : 'negative'}">${record.cal.toFixed(2)}%</td>
+                <td>${parseFloat(record.input1 || 0).toFixed(6)}</td>
+                <td>${parseFloat(record.input2 || 0).toFixed(6)}</td>
+                <td>${parseFloat(record.input3 || 0).toFixed(6)}</td>
+                <td>${parseFloat(record.profit || 0).toFixed(0)}</td>
+                <td class="${record.cal >= 0 ? 'positive' : 'negative'}">${parseFloat(record.cal || 0).toFixed(2)}%</td>
                 <td>${record.time}</td>
             `;
             this.dataTableBody.appendChild(row);
@@ -384,11 +331,11 @@ class DogecoinCalculator {
         const csvContent = [
             headers.join(','),
             ...records.map(record => [
-                record.input1,
-                record.input2,
-                record.input3,
-                record.profit.toFixed(0),
-                record.cal.toFixed(2),
+                parseFloat(record.input1 || 0),
+                parseFloat(record.input2 || 0),
+                parseFloat(record.input3 || 0),
+                parseFloat(record.profit || 0).toFixed(0),
+                parseFloat(record.cal || 0).toFixed(2),
                 record.timestamp,
                 `"${record.time}"`
             ].join(','))
@@ -415,11 +362,11 @@ class DogecoinCalculator {
         records.forEach(record => {
             excelContent += `
                 <tr>
-                    <td>${record.input1.toFixed(2)}</td>
-                    <td>${record.input2.toFixed(2)}</td>
-                    <td>${record.input3.toFixed(2)}</td>
-                    <td>${record.profit.toFixed(2)}</td>
-                    <td>${record.cal.toFixed(2)}</td>
+                    <td>${parseFloat(record.input1 || 0).toFixed(2)}</td>
+                    <td>${parseFloat(record.input2 || 0).toFixed(2)}</td>
+                    <td>${parseFloat(record.input3 || 0).toFixed(2)}</td>
+                    <td>${parseFloat(record.profit || 0).toFixed(2)}</td>
+                    <td>${parseFloat(record.cal || 0).toFixed(2)}</td>
                     <td>${record.timestamp}</td>
                     <td>${record.time}</td>
                 </tr>
@@ -448,7 +395,9 @@ class DogecoinCalculator {
         if (confirm('⚠️ Bạn có chắc chắn muốn xóa toàn bộ dữ liệu? Hành động này không thể hoàn tác!')) {
             await chrome.storage.local.remove(['dataRecords', 'currentPrice', 'lastPriceUpdate']);
             this.dataRecords = [];
+            this.currentPrice = 0;
             this.updateDataTable();
+            this.updatePriceDisplay();
             alert('✅ Đã xóa toàn bộ dữ liệu thành công');
         }
     }

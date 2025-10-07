@@ -7,7 +7,8 @@
     "activeTab",
     "storage",
     "tabs",
-    "scripting"
+    "scripting",
+    "alarms"
   ],
   "host_permissions": [
     "https://www.mining-dutch.nl/*"
@@ -19,10 +20,10 @@
     "default_popup": "popup.html",
     "default_title": "Dogecoin Profit Calculator"
   },
-  "content_scripts": [
+  "web_accessible_resources": [
     {
-      "matches": ["https://www.mining-dutch.nl/pools/dogecoin.php?page=dashboard#*"],
-      "js": ["content.js"]
+      "resources": ["test-background.html", "test-background.js"],
+      "matches": ["<all_urls>"]
     }
   ],
   "icons": {
@@ -31,4 +32,3 @@
     "128": "icon128.png"
   }
 }
-
