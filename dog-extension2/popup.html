@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            width: 600px;
+            min-height: 600px;
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        h3 {
+            color: #fff;
+            margin-bottom: 15px;
+            font-size: 16px;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+            padding-bottom: 5px;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+        
+        .price-display {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .price-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        .last-update {
+            font-size: 12px;
+            color: #ccc;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .start-btn {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .stop-btn {
+            background: #f44336;
+            color: white;
+        }
+        
+        .test-btn {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .export-btn {
+            background: #FF9800;
+            color: white;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        .status.running {
+            background: rgba(76, 175, 80, 0.3);
+            color: #4CAF50;
+        }
+        
+        .status.stopped {
+            background: rgba(244, 67, 54, 0.3);
+            color: #f44336;
+        }
+        
+        .data-table {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        th {
+            background: rgba(255, 255, 255, 0.2);
+            font-weight: bold;
+        }
+        
+        .export-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        
+        input[type="datetime-local"] {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            min-width: 150px;
+        }
+        
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .excel-btn {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .csv-btn {
+            background: #FF9800;
+            color: white;
+        }
+        
+        .clear-btn {
+            background: #f44336;
+            color: white;
+        }
+        
+        .positive {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        
+        .negative {
+            color: #f44336;
+            font-weight: bold;
+        }
+        
+        .latest-record {
+            background: rgba(76, 175, 80, 0.2) !important;
+            border-left: 3px solid #4CAF50;
+        }
+        
+        .section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            backdrop-filter: blur(5px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐕 Dogecoin Profit Calculator</h1>
+        
+        <div class="section">
+            <h3>💰 Giá hiện tại</h3>
+            <div class="price-display">
+                <div class="price-value" id="currentPrice">Loading...</div>
+                <div class="last-update" id="lastUpdate">Chưa cập nhật</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>⚙️ Cài đặt tham số</h3>
+            <div class="input-group">
+                <label for="input1">Input 1:</label>
+                <input type="number" id="input1" step="0.000001" placeholder="Nhập giá trị input 1">
+            </div>
+            
+            <div class="input-group">
+                <label for="input2">Input 2:</label>
+                <input type="number" id="input2" step="0.000001" placeholder="Nhập giá trị input 2">
+            </div>
+            
+            <div class="input-group">
+                <label for="input3">Input 3:</label>
+                <input type="number" id="input3" step="0.000001" placeholder="Nhập giá trị input 3">
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>🎛️ Điều khiển</h3>
+            <div class="controls">
+                <button id="startBtn" class="start-btn">▶️ Start</button>
+                <button id="stopBtn" class="stop-btn">⏹️ Stop</button>
+                <button id="testBtn" class="test-btn">🔍 Test</button>
+            </div>
+            
+            <div class="controls">
+                <button id="openPageBtn" class="export-btn" style="width: 100%;">🔗 Open Target Page</button>
+            </div>
+            
+            <div class="status" id="status">Stopped</div>
+        </div>
+        
+        <div class="section">
+            <h3>📤 Xuất dữ liệu</h3>
+            <div class="export-controls">
+                <input type="datetime-local" id="startTime" placeholder="Từ thời gian">
+                <input type="datetime-local" id="endTime" placeholder="Đến thời gian">
+            </div>
+            <div class="export-buttons">
+                <button id="exportCsvBtn" class="csv-btn">📄 Export CSV</button>
+                <button id="exportExcelBtn" class="excel-btn">📊 Export Excel</button>
+                <button id="clearDataBtn" class="clear-btn">🗑️ Clear Data</button>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>📋 Bảng dữ liệu (50 bản ghi gần nhất)</h3>
+            <div class="data-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Input 1</th>
+                            <th>Input 2</th>
+                            <th>Input 3</th>
+                            <th>Profit</th>
+                            <th>Cal (%)</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script src="popup.js"></script>
+</body>
+</html>

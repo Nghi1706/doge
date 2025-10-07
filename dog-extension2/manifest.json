@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "Dogecoin Profit Calculator",
+  "version": "1.0",
+  "description": "Extension để tính toán profit từ giá Dogecoin tự động",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "tabs",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://www.mining-dutch.nl/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Dogecoin Profit Calculator"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.mining-dutch.nl/pools/dogecoin.php?page=dashboard#*"],
+      "js": ["content.js"]
+    }
+  ],
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}
+
