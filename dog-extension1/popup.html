@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 600px;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+    }
+    
+    .header {
+      text-align: center;
+      color: #333;
+      margin-bottom: 20px;
+    }
+    
+    .input-section {
+      background: white;
+      margin-bottom: 15px;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .input-group {
+      margin: 10px 0;
+      display: flex;
+      align-items: center;
+    }
+    
+    label {
+      display: inline-block;
+      width: 120px;
+      font-weight: bold;
+      color: #555;
+    }
+    
+    input {
+      width: 120px;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .price-info {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+    }
+    
+    .price-info div {
+      margin: 5px 0;
+    }
+    
+    .status {
+      background: #e7f3ff;
+      padding: 10px;
+      border-radius: 5px;
+      margin: 10px 0;
+      border-left: 4px solid #2196F3;
+    }
+    
+    .control-section {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .control-buttons {
+      display: flex;
+      gap: 10px;
+      margin: 10px 0;
+    }
+    
+    .control-btn {
+      flex: 1;
+      padding: 12px 10px;
+      font-size: 14px;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .control-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    .control-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    
+    #startBtn {
+      background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+      color: white;
+    }
+    
+    #stopBtn {
+      background: linear-gradient(135deg, #f44336 0%, #da190b 100%);
+      color: white;
+    }
+    
+    #testBtn {
+      background: linear-gradient(135deg, #2196F3 0%, #0b7dda 100%);
+      color: white;
+    }
+    
+    .test-result {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    
+    .test-success {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+    }
+    
+    .test-error {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+    }
+    
+    .error-message {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+      padding: 8px;
+      border-radius: 4px;
+      margin-top: 5px;
+      font-size: 12px;
+    }
+    
+    .status-running {
+      color: #4CAF50;
+      font-weight: bold;
+    }
+    
+    .status-stopped {
+      color: #f44336;
+      font-weight: bold;
+    }
+    
+    .export-section {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .date-inputs {
+      display: flex;
+      gap: 10px;
+      margin: 10px 0;
+      align-items: center;
+    }
+    
+    .date-inputs input {
+      width: 160px;
+    }
+    
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 5px;
+      font-weight: bold;
+      transition: transform 0.2s;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+    }
+    
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .danger-btn {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    th, td {
+      border: 1px solid #e0e0e0;
+      padding: 10px;
+      text-align: center;
+      font-size: 12px;
+    }
+    
+    th {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-weight: bold;
+    }
+    
+    tbody tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+    
+    tbody tr:hover {
+      background-color: #e3f2fd;
+    }
+    
+    .table-container {
+      max-height: 300px;
+      overflow-y: auto;
+      border-radius: 8px;
+    }
+    
+    .highlight {
+      font-weight: bold;
+      color: #2196F3;
+    }
+    
+    .positive {
+      color: #4CAF50;
+    }
+    
+    .negative {
+      color: #f44336;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h2>🐕 Dogecoin Profit Monitor</h2>
+  </div>
+  
+  <div class="input-section">
+    <h3>⚙️ Cài đặt tham số</h3>
+    <div class="input-group">
+      <label>Input 1:</label>
+      <input type="number" id="input1" step="0.000001" value="0" placeholder="Nhập giá trị 1">
+    </div>
+    <div class="input-group">
+      <label>Input 2:</label>
+      <input type="number" id="input2" step="0.000001" value="0" placeholder="Nhập giá trị 2">
+    </div>
+    <div class="input-group">
+      <label>Input 3:</label>
+      <input type="number" id="input3" step="0.000001" value="1" placeholder="Nhập giá trị 3">
+    </div>
+    <button id="saveInputs">💾 Lưu tham số</button>
+  </div>
+
+  <div class="price-info">
+    <div><strong>💰 Giá hiện tại (ID: b-price):</strong> <span id="currentPrice" class="highlight">--</span></div>
+    <div><strong>📊 Profit (x100M):</strong> <span id="profitValue" class="highlight">--</span></div>
+    <div><strong>🕒 Cập nhật lần cuối:</strong> <span id="lastUpdate">--</span></div>
+  </div>
+
+  <div class="status">
+    <div><strong>📡 Trạng thái:</strong> <span id="status">Đang khởi động...</span></div>
+    <div id="errorMessage" class="error-message" style="display: none;"></div>
+  </div>
+
+  <div class="control-section">
+    <h3>🎛️ Điều khiển</h3>
+    <div class="control-buttons">
+      <button id="startBtn" class="control-btn">▶️ Bắt đầu</button>
+      <button id="stopBtn" class="control-btn">⏹️ Dừng lại</button>
+      <button id="testBtn" class="control-btn">🔍 Test kết nối</button>
+    </div>
+    <div id="testResult" class="test-result" style="display: none;"></div>
+  </div>
+
+  <div class="export-section">
+    <h3>📤 Xuất dữ liệu</h3>
+    <div class="date-inputs">
+      <label>Từ:</label>
+      <input type="datetime-local" id="fromDate">
+      <label>Đến:</label>
+      <input type="datetime-local" id="toDate">
+    </div>
+    <div>
+      <button id="exportCsv">📄 Xuất CSV</button>
+      <button id="exportExcel">📊 Xuất Excel</button>
+      <button id="clearData" class="danger-btn">🗑️ Xóa dữ liệu</button>
+    </div>
+  </div>
+
+  <div>
+    <h3>📋 Bảng dữ liệu (50 bản ghi gần nhất)</h3>
+    <div class="table-container">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th>Input1</th>
+            <th>Input2</th>
+            <th>Input3</th>
+            <th>Profit</th>
+            <th>Cal</th>
+            <th>Thời gian</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
