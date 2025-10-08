@@ -1,7 +1,45 @@
 // Background script for Dogecoin Profit Calculator - Manifest V3 Optimized
+class PerformanceMonitor {
+    constructor() {
+        this.startTime = Date.now();
+        this.operationCount = 0;
+        this.lastCleanup = Date.now();
+    }
+
+    recordOperation() {
+        this.operationCount++;
+        
+        // Cleanup every hour
+        if (Date.now() - this.lastCleanup > 3600000) {
+            this.performCleanup();
+            this.lastCleanup = Date.now();
+        }
+    }
+
+    async performCleanup() {
+        try {
+            // Clear old alarms (không ảnh hưởng data)
+            const alarms = await chrome.alarms.getAll();
+            alarms.forEach(alarm => {
+                if (alarm.name !== 'priceMonitoring') {
+                    chrome.alarms.clear(alarm.name);
+                }
+            });
+
+            // Log performance stats
+            const uptime = Date.now() - this.startTime;
+            console.log(`Performance: ${this.operationCount} operations in ${Math.round(uptime/1000)}s`);
+            
+        } catch (error) {
+            console.error('Cleanup error:', error);
+        }
+    }
+}
+
 class BackgroundService {
     constructor() {
         this.isRunning = false;
+        this.performanceMonitor = new PerformanceMonitor();
         this.setupMessageListener();
         this.setupAlarmListener();
         this.loadState();
@@ -131,6 +169,9 @@ class BackgroundService {
                             // Collect data with profit calculation
                             await this.collectData(profit);
                             
+                            // Record operation for performance monitoring
+                            this.performanceMonitor.recordOperation();
+                            
                         } 
                         // todo: handle price parse error
                         else {
@@ -154,9 +195,9 @@ class BackgroundService {
     async collectData(profit) {
         try {
             const result = await chrome.storage.local.get(['input1', 'input2', 'input3', 'dataRecords']);
-            const input1 = parseFloat(result.input1).toFixed(2) || 0;
-            const input2 = parseFloat(result.input2).toFixed(2) || 0;
-            const input3 = parseFloat(result.input3).toFixed(2) || 1;
+            const input1 = parseFloat(result.input1) || 0;
+            const input2 = parseFloat(result.input2) || 0;
+            const input3 = parseFloat(result.input3) || 1;
 
             // Skip data collection if inputs are not set
             if (input1 === 0 || input3 === 0) {
@@ -180,9 +221,9 @@ class BackgroundService {
             const dataRecords = result.dataRecords || [];
             dataRecords.unshift(record); // Add to beginning
 
-            // Keep only last 3000 records 3000 / 60 = 50 hours of data
-            if (dataRecords.length > 3000) {
-                dataRecords.splice(3000);
+            // Keep only last 1440 records 1440 / 60 = 24 hours of data
+            if (dataRecords.length > 1440) {
+                dataRecords.splice(1440);
             }
 
             await chrome.storage.local.set({ 
