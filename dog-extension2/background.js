@@ -71,6 +71,8 @@ class BackgroundService {
         chrome.alarms.onAlarm.addListener(async (alarm) => {
             if (alarm.name === 'priceMonitoring') {
                 await this.fetchPriceFromTargetPage();
+            } else if (alarm.name === 'pageReload') {
+                await this.reloadTargetPage();
             }
         });
     }
@@ -109,11 +111,18 @@ class BackgroundService {
     
     startPriceMonitoring() {
         chrome.alarms.clear('priceMonitoring');
+        chrome.alarms.clear('pageReload');
         
         // Create alarm to fetch price every 1 minute
         chrome.alarms.create('priceMonitoring', { 
             delayInMinutes: 1, 
             periodInMinutes: 1 
+        });
+        
+        // Create alarm to reload page every 10 minutes
+        chrome.alarms.create('pageReload', { 
+            delayInMinutes: 10, 
+            periodInMinutes: 10 
         });
         
         // Fetch immediately
@@ -122,6 +131,26 @@ class BackgroundService {
     
     stopPriceMonitoring() {
         chrome.alarms.clear('priceMonitoring');
+        chrome.alarms.clear('pageReload');
+    }
+    
+    async reloadTargetPage() {
+        try {
+            // Find the target tab
+            const tabs = await chrome.tabs.query({
+                url: "https://www.mining-dutch.nl/pools/dogecoin.php*"
+            });
+
+            if (tabs.length > 0) {
+                const tab = tabs[0];
+                // Reload the tab
+                await chrome.tabs.reload(tab.id);
+            } else {
+                console.log('Target page not found for reload');
+            }
+        } catch (error) {
+            console.error('Error reloading page:', error);
+        }
     }
     
     async fetchPriceFromTargetPage() {
