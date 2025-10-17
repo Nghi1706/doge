@@ -4,6 +4,7 @@ class DogecoinCalculator {
         this.isRunning = false;
         this.currentPrice = 0;
         this.dataRecords = [];
+        this.defaultDifferences = [-45, -40, -30, -20, -10, 0, 10, 20, 30, 40, 50, 60];
         
         this.initializeElements();
         this.loadStoredData();
@@ -16,17 +17,20 @@ class DogecoinCalculator {
         this.input1 = document.getElementById('input1');
         this.input2 = document.getElementById('input2');
         this.input3 = document.getElementById('input3');
+        this.input4 = document.getElementById('input4');
         this.currentPriceEl = document.getElementById('currentPrice');
         this.lastUpdateEl = document.getElementById('lastUpdate');
         this.statusEl = document.getElementById('status');
         this.dataTableBody = document.getElementById('dataTableBody');
+        this.countTableBody = document.getElementById('countTableBody');
         this.startBtn = document.getElementById('startBtn');
         this.stopBtn = document.getElementById('stopBtn');
         this.testBtn = document.getElementById('testBtn');
         this.openPageBtn = document.getElementById('openPageBtn');
-        this.exportBtn = document.getElementById('exportBtn');
         this.startTime = document.getElementById('startTime');
         this.endTime = document.getElementById('endTime');
+        this.countStartTime = document.getElementById('countStartTime');
+        this.countEndTime = document.getElementById('countEndTime');
     }
     
     setupEventListeners() {
@@ -35,21 +39,30 @@ class DogecoinCalculator {
         this.testBtn.addEventListener('click', () => this.test());
         this.openPageBtn.addEventListener('click', () => this.openTargetPage());
         
-        // Export buttons
+        // Export buttons for data
         document.getElementById('exportCsvBtn').addEventListener('click', () => this.exportData('csv'));
         document.getElementById('exportExcelBtn').addEventListener('click', () => this.exportData('excel'));
         document.getElementById('clearDataBtn').addEventListener('click', () => this.clearData());
         
+        // Export buttons for count table
+        document.getElementById('exportCountCsvBtn').addEventListener('click', () => this.exportCountData('csv'));
+        document.getElementById('exportCountExcelBtn').addEventListener('click', () => this.exportCountData('excel'));
+        document.getElementById('refreshCountBtn').addEventListener('click', () => this.updateCountTable());
+        
         // Auto-save inputs
-        [this.input1, this.input2, this.input3].forEach(input => {
+        [this.input1, this.input2, this.input3, this.input4].forEach(input => {
             input.addEventListener('input', () => this.saveInputs());
         });
+        
+        // Auto-refresh count table when date changes
+        this.countStartTime.addEventListener('change', () => this.updateCountTable());
+        this.countEndTime.addEventListener('change', () => this.updateCountTable());
     }
     
     async loadStoredData() {
         try {
             const result = await chrome.storage.local.get([
-                'isRunning', 'currentPrice', 'dataRecords', 'input1', 'input2', 'input3'
+                'isRunning', 'currentPrice', 'dataRecords', 'input1', 'input2', 'input3', 'input4'
             ]);
             
             this.isRunning = result.isRunning || false;
@@ -59,9 +72,11 @@ class DogecoinCalculator {
             this.input1.value = result.input1 || '';
             this.input2.value = result.input2 || '';
             this.input3.value = result.input3 || '';
+            this.input4.value = result.input4 || '';
             
             this.updatePriceDisplay();
             this.updateDataTable();
+            this.updateCountTable();
             this.updateStatus();
             
             // Check background status and sync
@@ -106,6 +121,7 @@ class DogecoinCalculator {
             if (JSON.stringify(result.dataRecords) !== JSON.stringify(this.dataRecords)) {
                 this.dataRecords = result.dataRecords || [];
                 this.updateDataTable();
+                this.updateCountTable(); // Update count table when data changes
             }
             
             // Update running status if changed
@@ -123,7 +139,8 @@ class DogecoinCalculator {
             await chrome.storage.local.set({
                 input1: this.input1.value,
                 input2: this.input2.value,
-                input3: this.input3.value
+                input3: this.input3.value,
+                input4: this.input4.value
             });
         } catch (error) {
             console.error('Error saving inputs:', error);
@@ -267,12 +284,72 @@ class DogecoinCalculator {
                 <td>${parseFloat(record.input1 || 0).toFixed(2)}</td>
                 <td>${parseFloat(record.input2 || 0).toFixed(2)}</td>
                 <td>${parseFloat(record.input3 || 0).toFixed(2)}</td>
+                <td>${parseFloat(record.input4 || 0).toFixed(2)}</td>
                 <td>${parseFloat(record.profit || 0).toFixed(2)}</td>
                 <td class="${record.cal >= 0 ? 'positive' : 'negative'}">${parseFloat(record.cal || 0).toFixed(2)}%</td>
+                <td class="${record.difference >= 0 ? 'positive' : 'negative'}">${record.difference || 0}</td>
+                <td class="${record.profit_amount >= 0 ? 'positive' : 'negative'}">${parseFloat(record.profit_amount || 0).toFixed(2)}</td>
                 <td>${record.time}</td>
             `;
             this.dataTableBody.appendChild(row);
         });
+    }
+    
+    updateCountTable() {
+        // Get filtered records based on date range
+        const filteredRecords = this.getFilteredRecordsForCount();
+        
+        // Count occurrences of each difference
+        const countMap = {};
+        this.defaultDifferences.forEach(diff => {
+            countMap[diff] = 0;
+        });
+        
+        filteredRecords.forEach(record => {
+            const diff = record.difference;
+            if (countMap.hasOwnProperty(diff)) {
+                countMap[diff]++;
+            }
+        });
+        
+        const totalRecords = filteredRecords.length;
+        
+        // Update table
+        this.countTableBody.innerHTML = '';
+        
+        this.defaultDifferences.forEach(diff => {
+            const count = countMap[diff];
+            const percentage = totalRecords > 0 ? ((count / totalRecords) * 100).toFixed(1) : '0.0';
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="${diff >= 0 ? 'positive' : 'negative'}">${diff}</td>
+                <td>${count}</td>
+                <td>${percentage}%</td>
+            `;
+            this.countTableBody.appendChild(row);
+        });
+    }
+    
+    getFilteredRecordsForCount() {
+        const startTime = this.countStartTime.value;
+        const endTime = this.countEndTime.value;
+        
+        let filteredRecords = this.dataRecords;
+        
+        if (startTime) {
+            filteredRecords = filteredRecords.filter(record => 
+                new Date(record.timestamp) >= new Date(startTime)
+            );
+        }
+        
+        if (endTime) {
+            filteredRecords = filteredRecords.filter(record => 
+                new Date(record.timestamp) <= new Date(endTime)
+            );
+        }
+        
+        return filteredRecords;
     }
     
     updateStatus() {
@@ -325,16 +402,71 @@ class DogecoinCalculator {
         alert(`✅ Đã xuất ${filteredRecords.length} bản ghi ra file ${format.toUpperCase()}`);
     }
     
+    async exportCountData(format) {
+        const filteredRecords = this.getFilteredRecordsForCount();
+        
+        if (filteredRecords.length === 0) {
+            alert('Không có dữ liệu để xuất bảng đếm');
+            return;
+        }
+        
+        // Count occurrences of each difference
+        const countMap = {};
+        this.defaultDifferences.forEach(diff => {
+            countMap[diff] = 0;
+        });
+        
+        filteredRecords.forEach(record => {
+            const diff = record.difference;
+            if (countMap.hasOwnProperty(diff)) {
+                countMap[diff]++;
+            }
+        });
+        
+        const totalRecords = filteredRecords.length;
+        const countData = this.defaultDifferences.map(diff => ({
+            difference: diff,
+            count: countMap[diff],
+            percentage: totalRecords > 0 ? ((countMap[diff] / totalRecords) * 100).toFixed(1) : '0.0'
+        }));
+        
+        if (format === 'csv') {
+            this.exportCountToCsv(countData);
+        } else if (format === 'excel') {
+            this.exportCountToExcel(countData);
+        }
+        
+        const dateRange = this.getDateRangeString();
+        alert(`✅ Đã xuất bảng đếm (${totalRecords} bản ghi${dateRange}) ra file ${format.toUpperCase()}`);
+    }
+    
+    getDateRangeString() {
+        const startTime = this.countStartTime.value;
+        const endTime = this.countEndTime.value;
+        
+        if (startTime && endTime) {
+            return ` từ ${startTime} đến ${endTime}`;
+        } else if (startTime) {
+            return ` từ ${startTime}`;
+        } else if (endTime) {
+            return ` đến ${endTime}`;
+        }
+        return '';
+    }
+    
     exportToCsv(records) {
-        const headers = ['Input 1', 'Input 2', 'Input 3', 'Profit', 'Cal (%)', 'Timestamp', 'Time'];
+        const headers = ['Input 1', 'Input 2', 'Input 3', 'Input 4', 'Profit', 'Cal (%)', 'Chênh lệch', 'Lợi nhuận', 'Timestamp', 'Time'];
         const csvContent = [
             headers.join(','),
             ...records.map(record => [
                 parseFloat(record.input1 || 0),
                 parseFloat(record.input2 || 0),
                 parseFloat(record.input3 || 0),
+                parseFloat(record.input4 || 0),
                 parseFloat(record.profit || 0).toFixed(0),
                 parseFloat(record.cal || 0).toFixed(2),
+                record.difference || 0,
+                parseFloat(record.profit_amount || 0).toFixed(2),
                 record.timestamp,
                 `"${record.time}"`
             ].join(','))
@@ -351,8 +483,11 @@ class DogecoinCalculator {
                     <th>Input 1</th>
                     <th>Input 2</th>
                     <th>Input 3</th>
+                    <th>Input 4</th>
                     <th>Profit</th>
                     <th>Cal (%)</th>
+                    <th>Chênh lệch</th>
+                    <th>Lợi nhuận</th>
                     <th>Timestamp</th>
                     <th>Time</th>
                 </tr>
@@ -364,8 +499,11 @@ class DogecoinCalculator {
                     <td>${parseFloat(record.input1 || 0).toFixed(2)}</td>
                     <td>${parseFloat(record.input2 || 0).toFixed(2)}</td>
                     <td>${parseFloat(record.input3 || 0).toFixed(2)}</td>
+                    <td>${parseFloat(record.input4 || 0).toFixed(2)}</td>
                     <td>${parseFloat(record.profit || 0).toFixed(2)}</td>
                     <td>${parseFloat(record.cal || 0).toFixed(2)}</td>
+                    <td>${record.difference || 0}</td>
+                    <td>${parseFloat(record.profit_amount || 0).toFixed(2)}</td>
                     <td>${record.timestamp}</td>
                     <td>${record.time}</td>
                 </tr>
@@ -376,6 +514,47 @@ class DogecoinCalculator {
 
         const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
         this.downloadFile(blob, `dogecoin_profit_${this.getDateString()}.xls`);
+    }
+    
+    exportCountToCsv(countData) {
+        const headers = ['Chênh lệch', 'Số lượng', 'Tỷ lệ (%)'];
+        const csvContent = [
+            headers.join(','),
+            ...countData.map(item => [
+                item.difference,
+                item.count,
+                item.percentage
+            ].join(','))
+        ].join('\n');
+
+        const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        this.downloadFile(blob, `dogecoin_count_${this.getDateString()}.csv`);
+    }
+    
+    exportCountToExcel(countData) {
+        let excelContent = `
+            <table>
+                <tr>
+                    <th>Chênh lệch</th>
+                    <th>Số lượng</th>
+                    <th>Tỷ lệ (%)</th>
+                </tr>
+        `;
+
+        countData.forEach(item => {
+            excelContent += `
+                <tr>
+                    <td>${item.difference}</td>
+                    <td>${item.count}</td>
+                    <td>${item.percentage}</td>
+                </tr>
+            `;
+        });
+        
+        excelContent += '</table>';
+
+        const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+        this.downloadFile(blob, `dogecoin_count_${this.getDateString()}.xls`);
     }
     
     downloadFile(blob, filename) {
@@ -396,6 +575,7 @@ class DogecoinCalculator {
             this.dataRecords = [];
             this.currentPrice = 0;
             this.updateDataTable();
+            this.updateCountTable();
             this.updatePriceDisplay();
             alert('✅ Đã xóa toàn bộ dữ liệu thành công');
         }
