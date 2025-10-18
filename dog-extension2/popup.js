@@ -150,7 +150,6 @@ class DogecoinCalculator {
             const input5 = result.input5 || '';
             
             if (!input5 || input4 === 0) {
-                console.log('Input 4 và Input 5 cần được set để tính toán');
                 return;
             }
             
@@ -181,7 +180,6 @@ class DogecoinCalculator {
                 this.dataRecords = updatedRecords;
                 this.updateDataTable();
                 this.updateCountTable();
-                console.log('✅ Đã cập nhật tính toán lợi nhuận');
             }
             
         } catch (error) {

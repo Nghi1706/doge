@@ -18,18 +18,12 @@ class PerformanceMonitor {
 
     async performCleanup() {
         try {
-            // Clear old alarms (không ảnh hưởng data)
             const alarms = await chrome.alarms.getAll();
             alarms.forEach(alarm => {
                 if (alarm.name !== 'priceMonitoring') {
                     chrome.alarms.clear(alarm.name);
                 }
             });
-
-            // Log performance stats
-            const uptime = Date.now() - this.startTime;
-            console.log(`Performance: ${this.operationCount} operations in ${Math.round(uptime/1000)}s`);
-            
         } catch (error) {
             console.error('Cleanup error:', error);
         }
@@ -88,7 +82,6 @@ class BackgroundService {
             
             // if is running, start monitoring
             if (this.isRunning) {
-                console.log('Restoring background service from saved state');
                 this.startPriceMonitoring();
             }
             // Todo: check not running restart alarm?
@@ -179,8 +172,6 @@ class BackgroundService {
                         console.log('Cannot switch back to other tab:', error);
                     }
                 }, 1000);
-                
-                console.log('🎯 Đã focus vào tab để đánh thức');
             }
         } catch (error) {
             console.error('Error focusing tab:', error);
@@ -221,16 +212,12 @@ class BackgroundService {
                     // Đợi 2 giây rồi mới reload
                     setTimeout(async () => {
                         await chrome.tabs.reload(tab.id);
-                        console.log('🔄 Đã reload tab sau khi đánh thức');
                     }, 2000);
                     
                 } catch (scriptError) {
                     // Nếu script fail thì reload luôn
                     await chrome.tabs.reload(tab.id);
-                    console.log('🔄 Đã reload tab (script failed)');
                 }
-            } else {
-                console.log('Target page not found for reload');
             }
         } catch (error) {
             console.error('Error reloading page:', error);
@@ -304,7 +291,6 @@ class BackgroundService {
                                 // Record operation for performance monitoring
                                 this.performanceMonitor.recordOperation();
                                 
-                                console.log(`✅ Lấy giá thành công: ${profit} (attempt ${attempts + 1})`);
                                 return; // Success, exit retry loop
                                 
                             } else {
@@ -327,12 +313,10 @@ class BackgroundService {
                 }
                 
                 // Nếu tất cả attempts đều fail, thực hiện reload
-                console.log('❌ Tất cả attempts đều fail, reload tab...');
                 await this.reloadTargetPage();
                 
             } else {
                 // Tự động mở tab mới nếu không tìm thấy
-                console.log('❌ Không tìm thấy tab, mở tab mới...');
                 await chrome.tabs.create({
                     url: 'https://www.mining-dutch.nl/pools/dogecoin.php?page=dashboard#',
                     active: false
@@ -354,7 +338,6 @@ class BackgroundService {
 
             // Skip data collection if inputs are not set
             if (input1 === 0 || input3 === 0) {
-                console.log('Input 1 và Input 3 phải khác 0 để tính toán');
                 return;
             }
 
@@ -370,7 +353,6 @@ class BackgroundService {
             });
 
             if (existingRecord) {
-                console.log(`Đã có dữ liệu cho phút ${currentMinute}, bỏ qua...`);
                 return;
             }
             
@@ -421,9 +403,6 @@ class BackgroundService {
                 lastPrice: profit,
                 lastUpdate: now.toLocaleString('vi-VN')
             });
-
-            console.log(`✅ Đã lưu dữ liệu cho phút ${currentMinute}`);
-
         } catch (error) {
             console.error('LỖI KHI TÍNH TOÁN:', error);
         }
@@ -439,8 +418,6 @@ class BackgroundService {
                 "cache": true,
                 "cookies": true
             });
-            
-            console.log('🧹 Đã clear cache và cookies cho mining-dutch.nl');
         } catch (error) {
             console.error('Error clearing cache:', error);
         }
@@ -449,8 +426,6 @@ class BackgroundService {
     // 4. Thêm method đóng/mở tab mỗi 15 phút
     async reopenTargetPage() {
         try {
-            console.log('🔄 Bắt đầu đóng/mở tab mỗi 15 phút...');
-            
             // Clear cache trước khi đóng tab
             await this.clearCacheAndCookies();
             
@@ -462,7 +437,6 @@ class BackgroundService {
             if (tabs.length > 0) {
                 // Đóng tất cả các tab khớp
                 for (const tab of tabs) {
-                    console.log(`🚪 Đóng tab: ${tab.url}`);
                     await chrome.tabs.remove(tab.id);
                 }
                 
@@ -473,8 +447,6 @@ class BackgroundService {
                             url: 'https://www.mining-dutch.nl/pools/dogecoin.php?page=dashboard#',
                             active: false // Không focus vào tab mới
                         });
-                        console.log(`✅ Đã mở lại tab mới: ${newTab.id}`);
-                        
                         // Đợi tab load xong rồi fetch dữ liệu
                         setTimeout(() => {
                             this.fetchPriceFromTargetPage();
@@ -486,7 +458,6 @@ class BackgroundService {
                 }, 3000);
                 
             } else {
-                console.log('❌ Không tìm thấy tab target để đóng/mở');
                 // Mở tab mới nếu không tìm thấy
                 await chrome.tabs.create({
                     url: 'https://www.mining-dutch.nl/pools/dogecoin.php?page=dashboard#',
