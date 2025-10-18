@@ -345,11 +345,12 @@ class BackgroundService {
     
     async collectData(profit) {
         try {
-            const result = await chrome.storage.local.get(['input1', 'input2', 'input3', 'input4', 'dataRecords']);
+            const result = await chrome.storage.local.get(['input1', 'input2', 'input3', 'input4', 'input5', 'dataRecords']);
             const input1 = parseFloat(result.input1) || 0;
             const input2 = parseFloat(result.input2) || 0;
             const input3 = parseFloat(result.input3) || 1;
             const input4 = parseFloat(result.input4) || 0;
+            const input5 = result.input5 || '';
 
             // Skip data collection if inputs are not set
             if (input1 === 0 || input3 === 0) {
@@ -382,14 +383,24 @@ class BackgroundService {
                 return Math.abs(curr - calculatedDiff) < Math.abs(prev - calculatedDiff) ? curr : prev;
             });
 
-            // 3. Tính lợi nhuận = input4 * %cal
-            const profit_amount = input4 * (cal / 100);
+            // 3. Tính lợi nhuận mới: 4 * input4 * (thời gian hiện tại - input5 => số phút nguyên) * cal%
+            let profit_amount = 0;
+            if (input5) {
+                const startTime = new Date(input5);
+                const currentTime = new Date();
+                const timeDiffMinutes = Math.floor((currentTime - startTime) / (1000 * 60)); // Chỉ tính phút nguyên
+                profit_amount = 4 * input4 * timeDiffMinutes * (cal / 100);
+            } else {
+                // Fallback về công thức cũ nếu input5 chưa được set
+                profit_amount = 0;
+            }
 
             const record = {
                 input1,
                 input2,
                 input3,
                 input4,
+                input5,
                 profit,
                 cal,
                 difference: closestDiff,

@@ -18,6 +18,7 @@ class DogecoinCalculator {
         this.input2 = document.getElementById('input2');
         this.input3 = document.getElementById('input3');
         this.input4 = document.getElementById('input4');
+        this.input5 = document.getElementById('input5');
         this.currentPriceEl = document.getElementById('currentPrice');
         this.lastUpdateEl = document.getElementById('lastUpdate');
         this.statusEl = document.getElementById('status');
@@ -50,7 +51,7 @@ class DogecoinCalculator {
         document.getElementById('refreshCountBtn').addEventListener('click', () => this.updateCountTable());
         
         // Auto-save inputs
-        [this.input1, this.input2, this.input3, this.input4].forEach(input => {
+        [this.input1, this.input2, this.input3, this.input4, this.input5].forEach(input => {
             input.addEventListener('input', () => this.saveInputs());
         });
         
@@ -62,7 +63,7 @@ class DogecoinCalculator {
     async loadStoredData() {
         try {
             const result = await chrome.storage.local.get([
-                'isRunning', 'currentPrice', 'dataRecords', 'input1', 'input2', 'input3', 'input4'
+                'isRunning', 'currentPrice', 'dataRecords', 'input1', 'input2', 'input3', 'input4', 'input5'
             ]);
             
             this.isRunning = result.isRunning || false;
@@ -73,6 +74,7 @@ class DogecoinCalculator {
             this.input2.value = result.input2 || '';
             this.input3.value = result.input3 || '';
             this.input4.value = result.input4 || '';
+            this.input5.value = result.input5 || '';
             
             this.updatePriceDisplay();
             this.updateDataTable();
@@ -103,6 +105,11 @@ class DogecoinCalculator {
         setInterval(async () => {
             await this.refreshData();
         }, 5000); // Refresh every 5 seconds
+        
+        // Auto-update profit calculations every minute
+        setInterval(async () => {
+            await this.updateProfitCalculations();
+        }, 60000); // Update every 60 seconds
     }
     
     async refreshData() {
@@ -134,13 +141,62 @@ class DogecoinCalculator {
         }
     }
     
+    async updateProfitCalculations() {
+        try {
+            // Lấy dữ liệu hiện tại
+            const result = await chrome.storage.local.get(['dataRecords', 'input4', 'input5']);
+            const dataRecords = result.dataRecords || [];
+            const input4 = parseFloat(result.input4) || 0;
+            const input5 = result.input5 || '';
+            
+            if (!input5 || input4 === 0) {
+                console.log('Input 4 và Input 5 cần được set để tính toán');
+                return;
+            }
+            
+            // Cập nhật tất cả các bản ghi với công thức mới
+            let hasChanges = false;
+            const updatedRecords = dataRecords.map(record => {
+                const oldProfitAmount = record.profit_amount;
+                
+                // Tính lại lợi nhuận với công thức mới
+                const startTime = new Date(input5);
+                const recordTime = new Date(record.timestamp);
+                const timeDiffMinutes = Math.floor((recordTime - startTime) / (1000 * 60)); // Chỉ tính phút nguyên
+                const newProfitAmount = 4 * input4 * timeDiffMinutes * (record.cal / 100);
+                
+                if (Math.abs(oldProfitAmount - newProfitAmount) > 0.01) {
+                    hasChanges = true;
+                }
+                
+                return {
+                    ...record,
+                    profit_amount: newProfitAmount
+                };
+            });
+            
+            // Lưu lại dữ liệu đã cập nhật
+            if (hasChanges) {
+                await chrome.storage.local.set({ dataRecords: updatedRecords });
+                this.dataRecords = updatedRecords;
+                this.updateDataTable();
+                this.updateCountTable();
+                console.log('✅ Đã cập nhật tính toán lợi nhuận');
+            }
+            
+        } catch (error) {
+            console.error('Error updating profit calculations:', error);
+        }
+    }
+    
     async saveInputs() {
         try {
             await chrome.storage.local.set({
                 input1: this.input1.value,
                 input2: this.input2.value,
                 input3: this.input3.value,
-                input4: this.input4.value
+                input4: this.input4.value,
+                input5: this.input5.value
             });
         } catch (error) {
             console.error('Error saving inputs:', error);
@@ -271,6 +327,13 @@ class DogecoinCalculator {
         this.lastUpdateEl.textContent = `Cập nhật: ${new Date().toLocaleTimeString()}`;
     }
     
+    calculateTotalProfit() {
+        // Tính tổng lợi nhuận từ tất cả các bản ghi
+        return this.dataRecords.reduce((total, record) => {
+            return total + (parseFloat(record.profit_amount) || 0);
+        }, 0);
+    }
+    
     updateDataTable() {
         this.dataTableBody.innerHTML = '';
         
@@ -285,6 +348,7 @@ class DogecoinCalculator {
                 <td>${parseFloat(record.input2 || 0).toFixed(2)}</td>
                 <td>${parseFloat(record.input3 || 0).toFixed(2)}</td>
                 <td>${parseFloat(record.input4 || 0).toFixed(2)}</td>
+                <td>${record.input5 ? new Date(record.input5).toLocaleString('vi-VN') : 'N/A'}</td>
                 <td>${parseFloat(record.profit || 0).toFixed(2)}</td>
                 <td class="${record.cal >= 0 ? 'positive' : 'negative'}">${parseFloat(record.cal || 0).toFixed(2)}%</td>
                 <td class="${record.difference >= 0 ? 'positive' : 'negative'}">${record.difference || 0}</td>
@@ -319,13 +383,18 @@ class DogecoinCalculator {
         
         this.defaultDifferences.forEach(diff => {
             const count = countMap[diff];
-            const percentage = totalRecords > 0 ? ((count / totalRecords) * 100).toFixed(1) : '0.0';
+            
+            // Tính tổng lợi nhuận cho từng chênh lệch
+            const recordsWithDiff = filteredRecords.filter(record => record.difference === diff);
+            const totalProfitForDiff = recordsWithDiff.reduce((total, record) => {
+                return total + (parseFloat(record.profit_amount) || 0);
+            }, 0);
             
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td class="${diff >= 0 ? 'positive' : 'negative'}">${diff}</td>
                 <td>${count}</td>
-                <td>${percentage}%</td>
+                <td class="${totalProfitForDiff >= 0 ? 'positive' : 'negative'}">${totalProfitForDiff.toFixed(2)}</td>
             `;
             this.countTableBody.appendChild(row);
         });
@@ -424,11 +493,18 @@ class DogecoinCalculator {
         });
         
         const totalRecords = filteredRecords.length;
-        const countData = this.defaultDifferences.map(diff => ({
-            difference: diff,
-            count: countMap[diff],
-            percentage: totalRecords > 0 ? ((countMap[diff] / totalRecords) * 100).toFixed(1) : '0.0'
-        }));
+        const countData = this.defaultDifferences.map(diff => {
+            const recordsWithDiff = filteredRecords.filter(record => record.difference === diff);
+            const totalProfitForDiff = recordsWithDiff.reduce((total, record) => {
+                return total + (parseFloat(record.profit_amount) || 0);
+            }, 0);
+            
+            return {
+                difference: diff,
+                count: countMap[diff],
+                totalProfit: totalProfitForDiff.toFixed(2)
+            };
+        });
         
         if (format === 'csv') {
             this.exportCountToCsv(countData);
@@ -455,7 +531,7 @@ class DogecoinCalculator {
     }
     
     exportToCsv(records) {
-        const headers = ['Input 1', 'Input 2', 'Input 3', 'Input 4', 'Profit', 'Cal (%)', 'Chênh lệch', 'Lợi nhuận', 'Timestamp', 'Time'];
+        const headers = ['Input 1', 'Input 2', 'Input 3', 'Input 4', 'Input 5', 'Profit', 'Cal (%)', 'Chênh lệch', 'Lợi nhuận', 'Timestamp', 'Time'];
         const csvContent = [
             headers.join(','),
             ...records.map(record => [
@@ -463,6 +539,7 @@ class DogecoinCalculator {
                 parseFloat(record.input2 || 0),
                 parseFloat(record.input3 || 0),
                 parseFloat(record.input4 || 0),
+                record.input5 || 'N/A',
                 parseFloat(record.profit || 0).toFixed(0),
                 parseFloat(record.cal || 0).toFixed(2),
                 record.difference || 0,
@@ -484,6 +561,7 @@ class DogecoinCalculator {
                     <th>Input 2</th>
                     <th>Input 3</th>
                     <th>Input 4</th>
+                    <th>Input 5</th>
                     <th>Profit</th>
                     <th>Cal (%)</th>
                     <th>Chênh lệch</th>
@@ -500,6 +578,7 @@ class DogecoinCalculator {
                     <td>${parseFloat(record.input2 || 0).toFixed(2)}</td>
                     <td>${parseFloat(record.input3 || 0).toFixed(2)}</td>
                     <td>${parseFloat(record.input4 || 0).toFixed(2)}</td>
+                    <td>${record.input5 || 'N/A'}</td>
                     <td>${parseFloat(record.profit || 0).toFixed(2)}</td>
                     <td>${parseFloat(record.cal || 0).toFixed(2)}</td>
                     <td>${record.difference || 0}</td>
@@ -517,13 +596,13 @@ class DogecoinCalculator {
     }
     
     exportCountToCsv(countData) {
-        const headers = ['Chênh lệch', 'Số lượng', 'Tỷ lệ (%)'];
+        const headers = ['Chênh lệch', 'Số lượng', 'Tổng lợi nhuận'];
         const csvContent = [
             headers.join(','),
             ...countData.map(item => [
                 item.difference,
                 item.count,
-                item.percentage
+                item.totalProfit
             ].join(','))
         ].join('\n');
 
@@ -537,7 +616,7 @@ class DogecoinCalculator {
                 <tr>
                     <th>Chênh lệch</th>
                     <th>Số lượng</th>
-                    <th>Tỷ lệ (%)</th>
+                    <th>Tổng lợi nhuận</th>
                 </tr>
         `;
 
@@ -546,7 +625,7 @@ class DogecoinCalculator {
                 <tr>
                     <td>${item.difference}</td>
                     <td>${item.count}</td>
-                    <td>${item.percentage}</td>
+                    <td>${item.totalProfit}</td>
                 </tr>
             `;
         });
